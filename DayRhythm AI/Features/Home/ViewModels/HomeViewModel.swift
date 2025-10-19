@@ -8,14 +8,10 @@
 import SwiftUI
 import Combine
 
-class HomeViewModel: ObservableObject {
-    @Published var selectedDate = Date()
-    @Published var showMonthPicker = false
-    @Published var events: [DayEvent] = []
+final class HomeViewModel: ObservableObject {
     
-    init() {
-        loadEventsForSelectedDate()
-    }
+    @Published var selectedDate: Date = Date()
+    @Published var events: [DayEvent] = []
     
     var currentMonth: String {
         let formatter = DateFormatter()
@@ -24,48 +20,43 @@ class HomeViewModel: ObservableObject {
     }
     
     var weekDays: [WeekDay] {
-        let calendar = Calendar.current
-        let weekdaySymbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-        
-        // Get the current week
-        guard let weekInterval = calendar.dateInterval(of: .weekOfMonth, for: selectedDate) else {
-            return []
-        }
-        
-        var days: [WeekDay] = []
-        var currentDate = weekInterval.start
-        
-        for index in 0..<7 {
-            let dayNumber = calendar.component(.day, from: currentDate)
-            let isSelected = calendar.isDate(currentDate, inSameDayAs: selectedDate)
-            
-            days.append(WeekDay(
-                name: weekdaySymbols[index],
-                number: dayNumber,
-                date: currentDate,
-                isSelected: isSelected
-            ))
-            
-            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
-        }
-        
-        return days
+        generateWeekDays(for: selectedDate)
     }
     
-    var totalScheduledHours: Double {
-        events.reduce(0) { $0 + $1.duration }
+    init() {
+        loadSampleEvents()
     }
     
-    func toggleMonthPicker() {
-        showMonthPicker.toggle()
-    }
-    
-    func loadEventsForSelectedDate() {
-        // TODO: Load from database/API
-        // For now, using sample data
+    private func loadSampleEvents() {
         events = [
-            DayEvent(title: "FOCUS", startHour: 9, duration: 2.083, color: .green),
-            DayEvent(title: "MEETING", startHour: 14, duration: 1.5, color: .orange)
+            DayEvent(title: "Morning Routine", startHour: 6, duration: 2, color: .purple, category: "Personal"),
+            DayEvent(title: "Deep Work", startHour: 9, duration: 4, color: .blue, category: "Work"),
+            DayEvent(title: "Lunch Break", startHour: 13, duration: 1, color: .green, category: "Break"),
+            DayEvent(title: "Meetings", startHour: 14, duration: 2, color: .orange, category: "Work"),
+            DayEvent(title: "Exercise", startHour: 17, duration: 1, color: .red, category: "Health"),
+            DayEvent(title: "Dinner", startHour: 19, duration: 1, color: .yellow, category: "Personal"),
+            DayEvent(title: "Reading", startHour: 21, duration: 1.5, color: .cyan, category: "Learning"),
+            DayEvent(title: "Sleep", startHour: 23, duration: 7, color: .indigo, category: "Rest")
         ]
+    }
+    
+    private func generateWeekDays(for date: Date) -> [WeekDay] {
+        let calendar = Calendar.current
+        let weekday = calendar.component(.weekday, from: date)
+        let weekStart = calendar.date(byAdding: .day, value: -(weekday - 1), to: date)!
+        
+        return (0..<7).map { offset in
+            let dayDate = calendar.date(byAdding: .day, value: offset, to: weekStart)!
+            let dayName = calendar.shortWeekdaySymbols[offset]
+            let dayNumber = calendar.component(.day, from: dayDate)
+            let isSelected = calendar.isDate(dayDate, inSameDayAs: selectedDate)
+            
+            return WeekDay(
+                name: dayName,
+                number: dayNumber,
+                date: dayDate,
+                isSelected: isSelected
+            )
+        }
     }
 }

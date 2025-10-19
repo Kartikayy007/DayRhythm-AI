@@ -33,8 +33,6 @@ final class TopHeaderViewModel: ObservableObject {
     }
     
     
-    
-    
     func handleMonthPickerTap() {
         localSelectedMonth = homeViewModel.selectedDate
         showMonthPicker = true

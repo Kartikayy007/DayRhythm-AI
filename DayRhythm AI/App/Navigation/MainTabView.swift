@@ -19,15 +19,9 @@ struct MainTabView: View {
             
             Text("Add Tab")
                 .tabItem {
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0.82, green: 0.49, blue: 0.42))
-                            .frame(width: 50, height: 50)
-                        
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
-                    }
+                    Image(systemName: "plus")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
                 }
             
             Text("Calendar Tab")
