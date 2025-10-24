@@ -10,19 +10,48 @@ import SwiftUI
 struct DayEvent: Identifiable {
     let id = UUID()
     let title: String
-    let startHour: Double  // 0-24 (e.g., 9.5 = 9:30 AM)
-    let duration: Double   // in hours (e.g., 2.5 = 2 hours 30 mins)
+    let startHour: Double
+    let duration: Double
     let color: Color
-    let category: String   // Added category field
-    
+    let category: String 
+    let emoji: String
+    let description: String
+    let participants: [String]
+    let isCompleted: Bool
+
     var endHour: Double {
         startHour + duration
+    }
+
+    var timeString: String {
+        let startTime = formatTime(startHour)
+        let endTime = formatTime(endHour)
+        return "\(startTime)–\(endTime)"
+    }
+
+    var durationString: String {
+        let hours = Int(duration)
+        let minutes = Int((duration - Double(hours)) * 60)
+        if minutes > 0 {
+            return "\(hours) h \(minutes)m"
+        }
+        return "\(hours) h"
+    }
+
+    private func formatTime(_ hour: Double) -> String {
+        let h = Int(hour)
+        let m = Int((hour - Double(h)) * 60)
+        let period = h >= 12 ? "PM" : "AM"
+        let displayHour = h > 12 ? h - 12 : (h == 0 ? 12 : h)
+        return String(format: "%d:%02d %@", displayHour, m, period)
     }
 }
 
 extension DayEvent {
     static let sampleEvents: [DayEvent] = [
-        DayEvent(title: "Morning Routine", startHour: 6, duration: 3, color: .red, category: "Personal"),
-        DayEvent(title: "Focus Work", startHour: 10, duration: 5, color: .green, category: "Work")
+        DayEvent(title: "Morning Routine", startHour: 6, duration: 3, color: .red, category: "Personal",
+                emoji: "☀️", description: "Start the day", participants: [], isCompleted: false),
+        DayEvent(title: "Focus Work", startHour: 10, duration: 5, color: .green, category: "Work",
+                emoji: "💻", description: "Deep work time", participants: [], isCompleted: false)
     ]
 }

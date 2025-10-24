@@ -22,10 +22,19 @@ struct WeekDayCell: View {
                 .font(.system(size: 20, weight: .semibold))
                 .frame(width: 42, height: 42)
                 .background(
-                    Circle()
-                        .fill(day.isSelected ? Color.white : Color.clear)
-                        .shadow(color: day.isSelected ? Color.black.opacity(0.15) : .clear,
-                                radius: 4, x: 0, y: 2)
+                    ZStack {
+                        // Today indicator - white outline
+                        if day.isToday {
+                            Circle()
+                                .stroke(Color.white, lineWidth: 2)
+                        }
+
+                        // Selected indicator - filled white circle
+                        Circle()
+                            .fill(day.isSelected ? Color.white : Color.clear)
+                            .shadow(color: day.isSelected ? Color.black.opacity(0.15) : .clear,
+                                    radius: 4, x: 0, y: 2)
+                    }
                 )
                 .scaleEffect(day.isSelected ? 1.08 : 1.0)
                 .foregroundColor(day.isSelected ? .appAccent : .white)

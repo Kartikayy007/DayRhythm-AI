@@ -14,4 +14,5 @@ struct WeekDay: Identifiable {
     let number: Int
     let date: Date
     let isSelected: Bool
+    var isToday: Bool = false
 }

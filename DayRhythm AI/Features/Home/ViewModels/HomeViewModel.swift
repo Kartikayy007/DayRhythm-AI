@@ -9,54 +9,96 @@ import SwiftUI
 import Combine
 
 final class HomeViewModel: ObservableObject {
-    
+
     @Published var selectedDate: Date = Date()
-    @Published var events: [DayEvent] = []
-    
+    @Published var eventsByDate: [String: [DayEvent]] = [:]
+
+    var events: [DayEvent] {
+        let dateKey = dateKeyFor(selectedDate)
+        return eventsByDate[dateKey] ?? []
+    }
+
     var currentMonth: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM"
         return formatter.string(from: selectedDate)
     }
-    
-    var weekDays: [WeekDay] {
-        generateWeekDays(for: selectedDate)
+
+    var currentTaskId: UUID? {
+        let calendar = Calendar.current
+        let now = Date()
+        let hour = calendar.component(.hour, from: now)
+        let minute = calendar.component(.minute, from: now)
+        let currentHour = Double(hour) + Double(minute) / 60.0
+
+        return events.first(where: { event in
+            event.startHour <= currentHour && currentHour < event.endHour
+        })?.id
     }
-    
+
+
     init() {
         loadSampleEvents()
     }
-    
-    private func loadSampleEvents() {
-        events = [
-            DayEvent(title: "Morning Routine", startHour: 6, duration: 2, color: .purple, category: "Personal"),
-            DayEvent(title: "Deep Work", startHour: 9, duration: 4, color: .blue, category: "Work"),
-            DayEvent(title: "Lunch Break", startHour: 13, duration: 1, color: .green, category: "Break"),
-            DayEvent(title: "Meetings", startHour: 14, duration: 2, color: .orange, category: "Work"),
-            DayEvent(title: "Exercise", startHour: 17, duration: 1, color: .red, category: "Health"),
-            DayEvent(title: "Dinner", startHour: 19, duration: 1, color: .yellow, category: "Personal"),
-            DayEvent(title: "Reading", startHour: 21, duration: 1.5, color: .cyan, category: "Learning"),
-            DayEvent(title: "Sleep", startHour: 23, duration: 7, color: .indigo, category: "Rest")
-        ]
+
+    private func loadSampleEvents() {}
+
+    private func dateKeyFor(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
-    
-    private func generateWeekDays(for date: Date) -> [WeekDay] {
-        let calendar = Calendar.current
-        let weekday = calendar.component(.weekday, from: date)
-        let weekStart = calendar.date(byAdding: .day, value: -(weekday - 1), to: date)!
-        
-        return (0..<7).map { offset in
-            let dayDate = calendar.date(byAdding: .day, value: offset, to: weekStart)!
-            let dayName = calendar.shortWeekdaySymbols[offset]
-            let dayNumber = calendar.component(.day, from: dayDate)
-            let isSelected = calendar.isDate(dayDate, inSameDayAs: selectedDate)
-            
-            return WeekDay(
-                name: dayName,
-                number: dayNumber,
-                date: dayDate,
-                isSelected: isSelected
-            )
+
+    func addEvent(_ event: DayEvent, repeatDaily: Bool = false) {
+        if repeatDaily {
+            for dayOffset in 0..<30 {
+                if let targetDate = Calendar.current.date(byAdding: .day, value: dayOffset, to: selectedDate) {
+                    let dateKey = dateKeyFor(targetDate)
+                    if eventsByDate[dateKey] != nil {
+                        eventsByDate[dateKey]?.append(event)
+                    } else {
+                        eventsByDate[dateKey] = [event]
+                    }
+                }
+            }
+        } else {
+            let dateKey = dateKeyFor(selectedDate)
+            if eventsByDate[dateKey] != nil {
+                eventsByDate[dateKey]?.append(event)
+            } else {
+                eventsByDate[dateKey] = [event]
+            }
+        }
+        objectWillChange.send()
+    }
+
+    func selectDate(_ date: Date) {
+        selectedDate = date
+    }
+
+    func moveToNextDay() {
+        if let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) {
+            selectedDate = nextDay
+        }
+    }
+
+    func moveToPreviousDay() {
+        if let previousDay = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) {
+            selectedDate = previousDay
+        }
+    }
+
+    func deleteEvent(_ event: DayEvent) {
+        let dateKey = dateKeyFor(selectedDate)
+        eventsByDate[dateKey]?.removeAll { $0.id == event.id }
+        objectWillChange.send()
+    }
+
+    func updateEvent(_ oldEvent: DayEvent, with newEvent: DayEvent) {
+        let dateKey = dateKeyFor(selectedDate)
+        if let index = eventsByDate[dateKey]?.firstIndex(where: { $0.id == oldEvent.id }) {
+            eventsByDate[dateKey]?[index] = newEvent
+            objectWillChange.send()
         }
     }
 }

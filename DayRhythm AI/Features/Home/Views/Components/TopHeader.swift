@@ -44,7 +44,8 @@ private extension TopHeader {
         HeaderTopBar(
             currentMonth: viewModel.currentMonth,
             onMonthPickerTap: viewModel.handleMonthPickerTap,
-            onProfileTap: viewModel.handleProfileTap
+            onProfileTap: viewModel.handleProfileTap,
+            onTodayTap: viewModel.goToToday
         )
     }
     
