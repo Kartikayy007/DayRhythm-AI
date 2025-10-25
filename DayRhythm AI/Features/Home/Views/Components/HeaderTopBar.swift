@@ -10,62 +10,35 @@ import SwiftUI
 
 struct HeaderTopBar: View {
     let currentMonth: String
+    let fullDateDisplay: String
+    let selectedDate: Date
     let onMonthPickerTap: () -> Void
-    let onProfileTap: () -> Void
-    var onTodayTap: (() -> Void)? = nil
 
     var body: some View {
         HStack {
-            Text(currentMonth)
-                .font(.system(size: 44, weight: .bold))
-                .foregroundColor(.white)
+            // Use the animated date display with motion blur counter
+            AnimatedDateDisplay(date: selectedDate)
 
             Button(action: onMonthPickerTap) {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundColor(.white)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
             }
 
             Spacer()
-
-            // Today button
-            if let onTodayTap = onTodayTap {
-                Button(action: onTodayTap) {
-                    Text("Today")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.white)
-                        )
-                }
-                .padding(.trailing, 8)
-            }
-
-            Button(action: onProfileTap) {
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.appAccent)
-                    )
-            }
         }
-        .padding(.top, 10)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 20)
+        .padding(.top, 8)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
     }
 }
 
 #Preview {
     HeaderTopBar(
         currentMonth: "October",
-        onMonthPickerTap: {},
-        onProfileTap: {}
+        fullDateDisplay: "25 October 2025",
+        selectedDate: Date(),
+        onMonthPickerTap: {}
     )
     .background(Color.appPrimary)
 }

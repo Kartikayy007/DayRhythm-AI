@@ -56,7 +56,7 @@ struct EditTaskSheet: View {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Top Navigation Bar
+                
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
@@ -75,7 +75,7 @@ struct EditTaskSheet: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
 
-                // Dial Section
+                
                 CircularDayDial(
                     events: [previewEvent],
                     selectedDate: Date(),
@@ -222,13 +222,13 @@ struct EditTaskSheet: View {
             selectedEmoji = originalTask.emoji
             selectedColor = originalTask.color
 
-            // Set start time from original task
+            
             var startComponents = Calendar.current.dateComponents([.year, .month, .day], from: Date())
             startComponents.hour = Int(originalTask.startHour)
             startComponents.minute = Int((originalTask.startHour - Double(Int(originalTask.startHour))) * 60)
             startTime = Calendar.current.date(from: startComponents) ?? Date()
 
-            // Set end time from original task
+            
             var endComponents = Calendar.current.dateComponents([.year, .month, .day], from: Date())
             endComponents.hour = Int(originalTask.endHour)
             endComponents.minute = Int((originalTask.endHour - Double(Int(originalTask.endHour))) * 60)

@@ -242,7 +242,7 @@ private extension CircularDayDial {
 
                 dragStartAngle = normalizedAngle
 
-                // Update in real-time during drag
+                
                 let hourValue = (normalizedAngle / 360) * 24
                 var newStartHour = highlightedEvent.startHour
                 var newEndHour = highlightedEvent.endHour
@@ -290,27 +290,27 @@ private extension CircularDayDial {
                 hourNumber("04", angle: 60)
                 hourNumber("06", angle: 90)
                 hourNumber("08", angle: 120)
-                hourNumber("10", angle: 150)    // 5 o'clock position
-                hourNumber("12", angle: 180)    // Bottom (6 o'clock position)
-                hourNumber("14", angle: 210)    // 7 o'clock position
-                hourNumber("16", angle: 240)    // 8 o'clock position
-                hourNumber("18", angle: 270)    // Left (9 o'clock position)
-                hourNumber("20", angle: 300)    // 10 o'clock position
-                hourNumber("22", angle: 330)    // 11 o'clock position
+                hourNumber("10", angle: 150)    
+                hourNumber("12", angle: 180)    
+                hourNumber("14", angle: 210)    
+                hourNumber("16", angle: 240)    
+                hourNumber("18", angle: 270)    
+                hourNumber("20", angle: 300)    
+                hourNumber("22", angle: 330)    
             case .twelveHourDay, .twelveHourNight:
-                // 12-hour clock: show all hours
-                hourNumber("12", angle: 0)      // Top
-                hourNumber("1", angle: 30)      // 1 o'clock
-                hourNumber("2", angle: 60)      // 2 o'clock
-                hourNumber("3", angle: 90)      // Right
-                hourNumber("4", angle: 120)     // 4 o'clock
-                hourNumber("5", angle: 150)     // 5 o'clock
-                hourNumber("6", angle: 180)     // Bottom
-                hourNumber("7", angle: 210)     // 7 o'clock
-                hourNumber("8", angle: 240)     // 8 o'clock
-                hourNumber("9", angle: 270)     // Left
-                hourNumber("10", angle: 300)    // 10 o'clock
-                hourNumber("11", angle: 330)    // 11 o'clock
+                
+                hourNumber("12", angle: 0)      
+                hourNumber("1", angle: 30)      
+                hourNumber("2", angle: 60)      
+                hourNumber("3", angle: 90)      
+                hourNumber("4", angle: 120)     
+                hourNumber("5", angle: 150)     
+                hourNumber("6", angle: 180)     
+                hourNumber("7", angle: 210)     
+                hourNumber("8", angle: 240)     
+                hourNumber("9", angle: 270)     
+                hourNumber("10", angle: 300)    
+                hourNumber("11", angle: 330)    
             }
         }
     }
@@ -338,7 +338,7 @@ private extension CircularDayDial {
     }
     
     func hourNumber(_ text: String, angle: Double) -> some View {
-        // Convert angle where 0 = top, 90 = right, 180 = bottom, 270 = left
+        
         let radians = (angle - 90) * .pi / 180
         let x = cos(radians) * (dialSize / 2 - 35)
         let y = sin(radians) * (dialSize / 2 - 35)
@@ -440,12 +440,12 @@ private extension CircularDayDial {
         let strokeWidth: CGFloat
 
         if onEventTimeChange != nil || highlightedEventId != nil {
-            // Edit mode or TaskDetailSheet: highlight the selected task
+            
             fillOpacity = isHighlighted ? 0.85 : 0.15
             strokeOpacity = isHighlighted ? 1.0 : 0.3
             strokeWidth = isHighlighted ? 2.5 : 1.5
         } else {
-            // HomeView mode: all tasks same opacity
+            
             fillOpacity = 0.30
             strokeOpacity = 0.8
             strokeWidth = 1.5

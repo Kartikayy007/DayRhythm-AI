@@ -1,0 +1,15 @@
+{
+  "originHash" : "0f95d1d6ca7aa27a90afc0aac50a0068fbabac451345542b9542e1940c3633b2",
+  "pins" : [
+    {
+      "identity" : "horizoncalendar",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/airbnb/HorizonCalendar",
+      "state" : {
+        "branch" : "master",
+        "revision" : "470234795d319d0924db5f98ec1f70b03a88f2de"
+      }
+    }
+  ],
+  "version" : 3
+}

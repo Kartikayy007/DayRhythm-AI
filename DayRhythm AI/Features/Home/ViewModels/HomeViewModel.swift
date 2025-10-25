@@ -43,7 +43,7 @@ final class HomeViewModel: ObservableObject {
 
     private func loadSampleEvents() {}
 
-    private func dateKeyFor(_ date: Date) -> String {
+    func dateKeyFor(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)

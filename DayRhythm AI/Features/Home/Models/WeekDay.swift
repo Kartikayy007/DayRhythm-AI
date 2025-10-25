@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 
 struct WeekDay: Identifiable {
@@ -15,4 +16,5 @@ struct WeekDay: Identifiable {
     let date: Date
     let isSelected: Bool
     var isToday: Bool = false
+    var eventColors: [Color] = []  // Colors from events on this day (up to 3 shown)
 }

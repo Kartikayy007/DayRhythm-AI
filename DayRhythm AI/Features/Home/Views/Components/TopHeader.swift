@@ -43,18 +43,15 @@ private extension TopHeader {
     var headerBar: some View {
         HeaderTopBar(
             currentMonth: viewModel.currentMonth,
-            onMonthPickerTap: viewModel.handleMonthPickerTap,
-            onProfileTap: viewModel.handleProfileTap,
-            onTodayTap: viewModel.goToToday
+            fullDateDisplay: viewModel.fullDateDisplay,
+            selectedDate: viewModel.selectedDate,
+            onMonthPickerTap: viewModel.handleMonthPickerTap
         )
     }
     
     
     var weekRow: some View {
-        WeekRowView(
-            weekDays: viewModel.weekDays,
-            onDaySelected: viewModel.handleDaySelection
-        )
+        SimpleWeekView(viewModel: viewModel)
     }
     
     
@@ -64,8 +61,4 @@ private extension TopHeader {
             onDone: viewModel.confirmMonthSelection
         )
     }
-}
-
-#Preview {
-    HomeView()
 }

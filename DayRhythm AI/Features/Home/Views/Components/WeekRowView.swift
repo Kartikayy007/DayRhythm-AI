@@ -20,8 +20,8 @@ struct WeekRowView: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.bottom, 25)
+        .padding(.horizontal, 8)
+        .padding(.bottom, 15)
     }
 }
 
