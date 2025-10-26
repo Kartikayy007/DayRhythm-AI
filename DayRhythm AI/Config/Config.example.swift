@@ -8,7 +8,8 @@
 import Foundation
 
 struct Config {
-    // Add your Groq API key here
+    // IMPORTANT: Replace this with your actual Groq API key
     // Get your API key from: https://console.groq.com/keys
-    static let groqAPIKey = "YOUR_GROQ_API_KEY_HERE"
+    // Example format: "gsk_your_actual_key_here"
+    static let groqAPIKey = ""
 }

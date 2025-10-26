@@ -16,7 +16,6 @@ struct HeaderTopBar: View {
 
     var body: some View {
         HStack {
-            // Use the animated date display with motion blur counter
             AnimatedDateDisplay(date: selectedDate)
 
             Button(action: onMonthPickerTap) {

@@ -92,3 +92,7 @@ iOSInjectionProject/
 # API Keys and Secrets
 DayRhythm AI/Config/Config.swift
 Config.swift
+
+# Documentation files
+*.md
+!README.md
