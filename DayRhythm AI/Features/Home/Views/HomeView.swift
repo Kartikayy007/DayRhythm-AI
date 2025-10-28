@@ -11,7 +11,7 @@ struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     @State private var showCreateTask = false
     @State private var selectedTask: DayEvent? = nil
-    @State private var showDayInsights = false
+    @State private var isArcDragging = false
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -25,21 +25,39 @@ struct HomeView: View {
                         CircularDayDial(
                             events: viewModel.events,
                             selectedDate: viewModel.selectedDate,
-                            highlightedEventId: viewModel.currentTaskId
+                            highlightedEventId: viewModel.currentTaskId,
+                            onEventTimeChange: { eventId, newStartHour, newEndHour in
+                                // Update the event with new times
+                                if let event = viewModel.events.first(where: { $0.id == eventId }) {
+                                    let updatedEvent = DayEvent(
+                                        id: event.id,  // Preserve the original ID
+                                        title: event.title,
+                                        startHour: newStartHour,
+                                        endHour: newEndHour,
+                                        color: event.color,
+                                        category: event.category,
+                                        emoji: event.emoji,
+                                        description: event.description,
+                                        participants: event.participants,
+                                        isCompleted: event.isCompleted
+                                    )
+                                    viewModel.updateEvent(event, with: updatedEvent)
+                                }
+                            },
+                            onEventTap: { event in
+                                selectedTask = event
+                            },
+                            onDragStateChange: { isDragging in
+                                isArcDragging = isDragging
+                            }
                         )
                         .padding(.top, 40)
-                        .onLongPressGesture(minimumDuration: 0.5) {
-                            // Haptic feedback
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                            impactFeedback.prepare()
-                            impactFeedback.impactOccurred()
-                            
-                            // Show insights sheet
-                            showDayInsights = true
-                        }
                         .gesture(
                             DragGesture()
                                 .onEnded { value in
+                                    // Only allow day switching when NOT dragging an arc
+                                    guard !isArcDragging else { return }
+
                                     if value.translation.width > 50 {
                                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                             viewModel.moveToPreviousDay()
@@ -75,6 +93,7 @@ struct HomeView: View {
                         
                     }
                 }
+                .scrollDisabled(isArcDragging)
             }
 
 
@@ -86,12 +105,5 @@ struct HomeView: View {
                 viewModel: viewModel
             )
         }
-        .sheet(isPresented: $showDayInsights) {
-            DayInsightsSheet(homeViewModel: viewModel)
-        }
     }
-    
-//    #Preview {
-//            HomeView(viewModel: HomeViewModel())
-//    }
 }

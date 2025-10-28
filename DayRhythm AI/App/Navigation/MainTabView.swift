@@ -45,7 +45,7 @@ struct MainTabView: View {
                 }
                 .tag(4)
         }
-        .tint(Color(red: 0.95, green: 0.55, blue: 0.55))
+        .tint(Color.appPrimary)
         .onChange(of: selectedTab) { newValue in
             if newValue == 4 {
                 showCreateTask = true

@@ -14,7 +14,7 @@ final class TopHeaderViewModel: ObservableObject {
     @Published var showMonthPicker: Bool = false
     @Published var localSelectedMonth: Date = Date()
 
-    let homeViewModel: HomeViewModel  // Made public for SimpleWeekView
+    let homeViewModel: HomeViewModel
     private var cancellables = Set<AnyCancellable>()
 
     var currentMonth: String {
@@ -36,7 +36,6 @@ final class TopHeaderViewModel: ObservableObject {
         self.homeViewModel = homeViewModel
         self.localSelectedMonth = homeViewModel.selectedDate
 
-        // Subscribe to selectedDate changes to update localSelectedMonth
         homeViewModel.$selectedDate
             .sink { [weak self] date in
                 self?.localSelectedMonth = date
@@ -56,7 +55,6 @@ final class TopHeaderViewModel: ObservableObject {
     }
 
     func handleProfileTap() {
-        // TODO: Implement profile navigation
         print("Profile tapped")
     }
 

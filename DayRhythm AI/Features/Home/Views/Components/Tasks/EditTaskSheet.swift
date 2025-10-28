@@ -34,14 +34,14 @@ struct EditTaskSheet: View {
         let calendar = Calendar.current
         let startHour = Double(calendar.component(.hour, from: startTime)) +
                        Double(calendar.component(.minute, from: startTime)) / 60
-        let endHour = Double(calendar.component(.hour, from: endTime)) +
+        let endHourCalculated = Double(calendar.component(.hour, from: endTime)) +
                      Double(calendar.component(.minute, from: endTime)) / 60
-        let duration = endHour > startHour ? endHour - startHour : (24 - startHour + endHour)
+        let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
 
         return DayEvent(
             title: title.isEmpty ? "New Task" : title,
             startHour: startHour,
-            duration: duration,
+            endHour: endHour,
             color: selectedColor,
             category: originalTask.category,
             emoji: selectedEmoji,
@@ -62,18 +62,18 @@ struct EditTaskSheet: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .semibold))
                             .frame(width: 40, height: 40)
-                    }.buttonStyle(.glass)
-
+                    }.glassEffect()
                     Spacer()
 
                     Button(action: updateTask) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 16, weight: .semibold))
                             .frame(width: 40, height: 40)
-                    }.buttonStyle(.glass)
+                    }.glassEffect()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
+            ScrollView {
 
                 
                 CircularDayDial(
@@ -235,19 +235,20 @@ struct EditTaskSheet: View {
             endTime = Calendar.current.date(from: endComponents) ?? Date()
         }
     }
+    }
 
     private func updateTask() {
         let calendar = Calendar.current
         let startHour = Double(calendar.component(.hour, from: startTime)) +
                        Double(calendar.component(.minute, from: startTime)) / 60
-        let endHour = Double(calendar.component(.hour, from: endTime)) +
+        let endHourCalculated = Double(calendar.component(.hour, from: endTime)) +
                      Double(calendar.component(.minute, from: endTime)) / 60
-        let duration = endHour > startHour ? endHour - startHour : (24 - startHour + endHour)
+        let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
 
         let updatedEvent = DayEvent(
             title: title.isEmpty ? "New Task" : title,
             startHour: startHour,
-            duration: duration,
+            endHour: endHour,
             color: selectedColor,
             category: originalTask.category,
             emoji: selectedEmoji,
@@ -267,7 +268,7 @@ struct EditTaskSheet: View {
         originalTask: DayEvent(
             title: "Team Meeting",
             startHour: 10,
-            duration: 1.5,
+            endHour: 11.5,
             color: Color(red: 255/255, green: 215/255, blue: 143/255),
             category: "Work",
             emoji: "👥",

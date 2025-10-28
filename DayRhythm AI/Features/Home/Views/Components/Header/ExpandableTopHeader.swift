@@ -19,7 +19,7 @@ struct ExpandableTopHeader: View {
 
     init(homeViewModel: HomeViewModel) {
         _viewModel = StateObject(wrappedValue: TopHeaderViewModel(homeViewModel: homeViewModel))
-    }
+    } 
 
     private var expandedHeight: CGFloat {
         UIScreen.main.bounds.height * expandedHeightRatio

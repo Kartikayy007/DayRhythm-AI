@@ -39,31 +39,38 @@ struct RadialSegment: Shape {
 }
 
 enum ClockMode: String, CaseIterable {
+    case twelveHour = "12h"
     case twentyFourHour = "24h"
-    case twelveHourDay = "Day"
-    case twelveHourNight = "Night"
-
-    var hourRange: ClosedRange<Double> {
-        switch self {
-        case .twentyFourHour:
-            return 0...24
-        case .twelveHourDay:
-            return 6...18
-        case .twelveHourNight:
-            return 18...30
-        }
-    }
-
-    var startHour: Double {
-        hourRange.lowerBound
-    }
 
     var duration: Double {
         switch self {
+        case .twelveHour:
+            return 12
         case .twentyFourHour:
             return 24
-        case .twelveHourDay, .twelveHourNight:
-            return 12
+        }
+    }
+}
+
+enum TimeFilter: String, CaseIterable {
+    case am = "AM"
+    case pm = "PM"
+
+    var hourRange: ClosedRange<Double> {
+        switch self {
+        case .am:
+            return 0...11.99
+        case .pm:
+            return 12...23.99
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .am:
+            return "moon.fill"
+        case .pm:
+            return "sun.max.fill"
         }
     }
 }
@@ -73,8 +80,11 @@ struct CircularDayDial: View {
     let selectedDate: Date
     var highlightedEventId: UUID? = nil
     var onEventTimeChange: ((UUID, Double, Double) -> Void)? = nil
+    var onEventTap: ((DayEvent) -> Void)? = nil
+    var onDragStateChange: ((Bool) -> Void)? = nil
 
     @State private var clockMode: ClockMode = .twentyFourHour
+    @State private var timeFilter: TimeFilter = .am
     @StateObject private var motionManager = MotionManager()
     @State private var currentTime = Date()
     @State private var dragStartAngle: Double = 0
@@ -82,6 +92,9 @@ struct CircularDayDial: View {
     @State private var isDraggingEnd = false
     @State private var isDraggingMiddle = false
     @State private var selectedArcId: UUID?
+    @State private var localHighlightedEventId: UUID? = nil
+    @State private var lastHapticHour: Int = -1
+    @State private var draggedEventTimes: [UUID: (start: Double, end: Double)] = [:]
 
     private let dialSize: CGFloat = 320
     private let strokeWidth: CGFloat = 1
@@ -122,11 +135,11 @@ struct CircularDayDial: View {
         events.filter { event in
             switch clockMode {
             case .twentyFourHour:
-                return true
-            case .twelveHourDay:
-                return event.startHour >= 6.0 && event.startHour < 18.0
-            case .twelveHourNight:
-                return event.startHour >= 18.0 || event.startHour < 6.0
+                return true // Show all events in 24h mode
+            case .twelveHour:
+                // Filter by AM/PM in 12h mode
+                let range = timeFilter.hourRange
+                return event.startHour >= range.lowerBound && event.startHour <= range.upperBound
             }
         }
     }
@@ -151,7 +164,14 @@ struct CircularDayDial: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            HStack(spacing: 12) {
+            // Simple compact filter UI
+            HStack(spacing: 8) {
+                // Clock icon
+                Image(systemName: "clock")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.6))
+
+                // Clock mode buttons (12h/24h)
                 ForEach(ClockMode.allCases, id: \.self) { mode in
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -169,15 +189,100 @@ struct CircularDayDial: View {
                             )
                     }
                 }
+
+                // Show AM/PM buttons only in 12h mode
+                if clockMode == .twelveHour {
+                    ForEach(TimeFilter.allCases, id: \.self) { filter in
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                timeFilter = filter
+                            }
+                        }) {
+                            Text(filter.rawValue)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(timeFilter == filter ? .black : .white.opacity(0.6))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(timeFilter == filter ? Color.white : Color.white.opacity(0.1))
+                                )
+                        }
+                    }
+                }
+
+                // Auto button (for future use)
+                Button(action: {
+                    // Auto mode will automatically switch based on current time
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        if clockMode == .twelveHour {
+                            // Auto-select AM or PM based on current hour
+                            let hour = Calendar.current.component(.hour, from: Date())
+                            timeFilter = hour < 12 ? .am : .pm
+                        }
+                    }
+                }) {
+                    Text("Auto")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.6))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.1))
+                        )
+                }
             }
             
             ZStack {
                 hourMarkers
+                    .allowsHitTesting(false)
 
                 ForEach(filteredEvents) { event in
-                    let isHighlighted = highlightedEventId == event.id
+                    let isHighlighted = (highlightedEventId == event.id || localHighlightedEventId == event.id)
                     eventArc(for: event, isHighlighted: isHighlighted)
-                        .gesture(isHighlighted && onEventTimeChange != nil ? dragGesture : nil)
+                        .highPriorityGesture(
+                            LongPressGesture(minimumDuration: 0.3)
+                                .onEnded { _ in
+                                    // Trigger haptic feedback when hold starts
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                    impactFeedback.prepare()
+                                    impactFeedback.impactOccurred()
+
+                                    // Notify immediately that dragging has started
+                                    onDragStateChange?(true)
+
+                                    // Enable drag mode for this event
+                                    withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                                        localHighlightedEventId = event.id
+                                        selectedArcId = event.id
+                                    }
+                                }
+                                .simultaneously(with: DragGesture(minimumDistance: 0)
+                                    .onChanged { value in
+                                        if localHighlightedEventId == event.id {
+                                            handleDragChanged(value: value, event: event)
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        if localHighlightedEventId == event.id {
+                                            handleDragEnded(event: event)
+                                        }
+                                    }
+                                )
+                        )
+                        .onTapGesture {
+                            if localHighlightedEventId == event.id {
+                                // If tapping the selected arc, deselect it
+                                withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                                    localHighlightedEventId = nil
+                                    selectedArcId = nil
+                                }
+                            } else {
+                                // Otherwise, open the task detail
+                                onEventTap?(event)
+                            }
+                        }
                 }
 
                 currentTimeIndicator
@@ -185,6 +290,7 @@ struct CircularDayDial: View {
                 centerContent
             }
             .frame(width: dialSize, height: dialSize)
+            .contentShape(Circle())
             .rotation3DEffect(
                 .radians(motionManager.pitch),
                 axis: (x: 1, y: 0, z: 0),
@@ -196,6 +302,13 @@ struct CircularDayDial: View {
                 perspective: 0.5
             )
             .shadow(color: .black.opacity(0.2), radius: 15, x: 0, y: 8)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        // This captures all drag events within the dial
+                        // Prevents ScrollView from capturing them
+                    }
+            )
             .onReceive(timer) { _ in
                 currentTime = Date()
             }
@@ -204,6 +317,128 @@ struct CircularDayDial: View {
 }
 
 private extension CircularDayDial {
+
+    func handleDragChanged(value: DragGesture.Value, event: DayEvent) {
+        let location = value.location
+        let center = CGPoint(x: dialSize / 2, y: dialSize / 2)
+        let dx = location.x - center.x
+        let dy = location.y - center.y
+
+        let angle = atan2(dy, dx) * 180 / .pi + 90
+        let normalizedAngle = angle < 0 ? angle + 360 : angle
+
+        // Calculate angles based on clock mode
+        let divisor = clockMode == .twentyFourHour ? 24.0 : 12.0
+        let startAngle = (event.startHour / divisor) * 360
+        let endAngle = (event.endHour / divisor) * 360
+
+        let distFromStart = abs(normalizedAngle - startAngle)
+        let distFromEnd = abs(normalizedAngle - endAngle)
+        let edgeThreshold: Double = 30
+
+        // Determine drag mode
+        if dragStartAngle == 0 {
+            if distFromStart < edgeThreshold {
+                isDraggingStart = true
+                isDraggingEnd = false
+                isDraggingMiddle = false
+            } else if distFromEnd < edgeThreshold {
+                isDraggingStart = false
+                isDraggingEnd = true
+                isDraggingMiddle = false
+            } else {
+                isDraggingStart = false
+                isDraggingEnd = false
+                isDraggingMiddle = true
+            }
+            dragStartAngle = normalizedAngle
+        }
+
+        // Calculate hour value based on clock mode
+        let hourValue: Double
+        if clockMode == .twentyFourHour {
+            hourValue = (normalizedAngle / 360) * 24
+        } else {
+            // For 12-hour mode, convert angle to hour (0-12) then adjust for AM/PM
+            var hour12 = (normalizedAngle / 360) * 12
+            if timeFilter == .pm && hour12 < 12 {
+                hour12 += 12
+            }
+            hourValue = hour12
+        }
+
+        var newStartHour = event.startHour
+        var newEndHour = event.endHour
+
+        if isDraggingStart {
+            newStartHour = hourValue
+            if newStartHour >= newEndHour {
+                newStartHour = newEndHour - 0.5
+            }
+        } else if isDraggingEnd {
+            newEndHour = hourValue
+            if newEndHour <= newStartHour {
+                newEndHour = newStartHour + 0.5
+            }
+        } else if isDraggingMiddle {
+            let duration = event.endHour - event.startHour
+            newStartHour = hourValue - duration / 2
+            newEndHour = hourValue + duration / 2
+
+            // Keep within bounds
+            if newStartHour < 0 {
+                newStartHour = 0
+                newEndHour = duration
+            }
+            if newEndHour > 24 {
+                newEndHour = 24
+                newStartHour = 24 - duration
+            }
+        }
+
+        // Store the dragged position for real-time visual feedback
+        draggedEventTimes[event.id] = (start: newStartHour, end: newEndHour)
+
+        // Haptic feedback when crossing hour boundaries
+        let currentHour = Int(hourValue)
+        if currentHour != lastHapticHour {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.prepare()
+            impactFeedback.impactOccurred()
+            lastHapticHour = currentHour
+        }
+
+        // Call the callback if available
+        if let callback = onEventTimeChange {
+            callback(event.id, newStartHour, newEndHour)
+        }
+    }
+
+    func handleDragEnded(event: DayEvent) {
+        // Reset drag state
+        isDraggingStart = false
+        isDraggingEnd = false
+        isDraggingMiddle = false
+        dragStartAngle = 0
+        lastHapticHour = -1
+
+        // Clear the dragged position
+        draggedEventTimes.removeValue(forKey: event.id)
+
+        // Notify that dragging has ended
+        onDragStateChange?(false)
+
+        // Strong haptic feedback on release
+        let impactFeedback = UIImpactFeedbackGenerator(style: .rigid)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
+
+        // Immediately deselect - no delay needed
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            localHighlightedEventId = nil
+            selectedArcId = nil
+        }
+    }
 
     var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
@@ -218,9 +453,10 @@ private extension CircularDayDial {
                 let angle = atan2(dy, dx) * 180 / .pi + 90
                 let normalizedAngle = angle < 0 ? angle + 360 : angle
 
-                let startAngle = (highlightedEvent.startHour / 24) * 360
-                let endAngle = (highlightedEvent.endHour / 24) * 360
-                let arcSize = endAngle - startAngle
+                // Calculate angles based on clock mode
+                let divisor = clockMode == .twentyFourHour ? 24.0 : 12.0
+                let startAngle = (highlightedEvent.startHour / divisor) * 360
+                let endAngle = (highlightedEvent.endHour / divisor) * 360
 
                 let distFromStart = abs(normalizedAngle - startAngle)
                 let distFromEnd = abs(normalizedAngle - endAngle)
@@ -242,8 +478,19 @@ private extension CircularDayDial {
 
                 dragStartAngle = normalizedAngle
 
-                
-                let hourValue = (normalizedAngle / 360) * 24
+                // Calculate hour value based on clock mode
+                let hourValue: Double
+                if clockMode == .twentyFourHour {
+                    hourValue = (normalizedAngle / 360) * 24
+                } else {
+                    // For 12-hour mode, convert angle to hour (0-12) then adjust for AM/PM
+                    var hour12 = (normalizedAngle / 360) * 12
+                    if timeFilter == .pm && hour12 < 12 {
+                        hour12 += 12
+                    }
+                    hourValue = hour12
+                }
+
                 var newStartHour = highlightedEvent.startHour
                 var newEndHour = highlightedEvent.endHour
 
@@ -260,7 +507,7 @@ private extension CircularDayDial {
                 } else if isDraggingMiddle {
                     let duration = highlightedEvent.endHour - highlightedEvent.startHour
                     let deltaAngle = normalizedAngle - dragStartAngle
-                    let deltaHour = (deltaAngle / 360) * 24
+                    let deltaHour = (deltaAngle / 360) * divisor
                     newStartHour = (highlightedEvent.startHour + deltaHour).truncatingRemainder(dividingBy: 24)
                     newEndHour = (newStartHour + duration).truncatingRemainder(dividingBy: 24)
                 }
@@ -285,45 +532,37 @@ private extension CircularDayDial {
 
             switch clockMode {
             case .twentyFourHour:
+                // 24-hour clock labels
                 hourNumber("00", angle: 0)
                 hourNumber("02", angle: 30)
                 hourNumber("04", angle: 60)
                 hourNumber("06", angle: 90)
                 hourNumber("08", angle: 120)
-                hourNumber("10", angle: 150)    
-                hourNumber("12", angle: 180)    
-                hourNumber("14", angle: 210)    
-                hourNumber("16", angle: 240)    
-                hourNumber("18", angle: 270)    
-                hourNumber("20", angle: 300)    
-                hourNumber("22", angle: 330)    
-            case .twelveHourDay, .twelveHourNight:
-                
-                hourNumber("12", angle: 0)      
-                hourNumber("1", angle: 30)      
-                hourNumber("2", angle: 60)      
-                hourNumber("3", angle: 90)      
-                hourNumber("4", angle: 120)     
-                hourNumber("5", angle: 150)     
-                hourNumber("6", angle: 180)     
-                hourNumber("7", angle: 210)     
-                hourNumber("8", angle: 240)     
-                hourNumber("9", angle: 270)     
-                hourNumber("10", angle: 300)    
-                hourNumber("11", angle: 330)    
+                hourNumber("10", angle: 150)
+                hourNumber("12", angle: 180)
+                hourNumber("14", angle: 210)
+                hourNumber("16", angle: 240)
+                hourNumber("18", angle: 270)
+                hourNumber("20", angle: 300)
+                hourNumber("22", angle: 330)
+            case .twelveHour:
+                // 12-hour clock labels (like analog clock)
+                hourNumber("12", angle: 0)
+                hourNumber("1", angle: 30)
+                hourNumber("2", angle: 60)
+                hourNumber("3", angle: 90)
+                hourNumber("4", angle: 120)
+                hourNumber("5", angle: 150)
+                hourNumber("6", angle: 180)
+                hourNumber("7", angle: 210)
+                hourNumber("8", angle: 240)
+                hourNumber("9", angle: 270)
+                hourNumber("10", angle: 300)
+                hourNumber("11", angle: 330)
             }
         }
     }
     
-    func getHourLabel(_ offset: Int) -> String {
-        let startHour = Int(clockMode.startHour)
-        let hour = (startHour + offset * 3) % 24
-        if clockMode == .twelveHourDay || clockMode == .twelveHourNight {
-            let displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour)
-            return String(format: "%02d", displayHour)
-        }
-        return String(format: "%02d", hour)
-    }
     
     func tick(at index: Int) -> some View {
         let isMajor = index % 5 == 0
@@ -363,9 +602,24 @@ private extension CircularDayDial {
             case .twentyFourHour:
                 let totalMinutes = hour * 60 + minute
                 return (totalMinutes / (24 * 60)) * 360
-            case .twelveHourDay, .twelveHourNight:
-                let hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour)
-                let totalMinutes = hour12 * 60 + minute
+            case .twelveHour:
+                // In 12h mode, we need to calculate based on the current AM/PM filter
+                var displayHour = hour
+
+                // Convert to 12-hour format
+                if timeFilter == .am {
+                    // For AM mode (0-11 hours)
+                    displayHour = hour > 11 ? hour - 12 : hour
+                } else {
+                    // For PM mode (12-23 hours)
+                    displayHour = hour >= 12 ? hour - 12 : hour + 12
+                }
+
+                // Special case for 12 (noon/midnight)
+                if displayHour == 0 { displayHour = 12 }
+                if displayHour > 12 { displayHour = displayHour - 12 }
+
+                let totalMinutes = displayHour * 60 + minute
                 return (totalMinutes / (12 * 60)) * 360
             }
         }()
@@ -396,60 +650,52 @@ private extension CircularDayDial {
         }
     }
     
-    func normalizeHourForMode(_ hour: Double) -> Double {
-        switch clockMode {
-        case .twentyFourHour:
-            return hour
-        case .twelveHourDay:
-            return hour > 12 ? hour - 12 : hour
-        case .twelveHourNight:
-            return hour > 12 ? hour - 12 : hour
-        }
-    }
-    
     func eventArc(for event: DayEvent, isHighlighted: Bool = true) -> some View {
         let startAngle: Angle
         let endAngle: Angle
 
+        // Use dragged times if available, otherwise use event's original times
+        let startHour = draggedEventTimes[event.id]?.start ?? event.startHour
+        let endHour = draggedEventTimes[event.id]?.end ?? event.endHour
+
         switch clockMode {
         case .twentyFourHour:
-            startAngle = .degrees((event.startHour / 24) * 360 - 90)
-            endAngle = .degrees((event.endHour / 24) * 360 - 90)
+            // In 24h mode, map full day
+            startAngle = .degrees((startHour / 24) * 360 - 90)
+            endAngle = .degrees((endHour / 24) * 360 - 90)
 
-        case .twelveHourDay, .twelveHourNight:
-            var start12 = event.startHour
-            if start12 > 12 {
-                start12 = start12 - 12
-            } else if start12 == 0 {
-                start12 = 12
+        case .twelveHour:
+            // In 12h mode, map to 12-hour clock
+            var adjustedStartHour = startHour
+            var adjustedEndHour = endHour
+
+            // Adjust for AM/PM filter
+            if timeFilter == .am {
+                // For AM (0-11), map directly
+                if adjustedStartHour >= 12 { adjustedStartHour -= 12 }
+                if adjustedEndHour >= 12 { adjustedEndHour -= 12 }
+            } else {
+                // For PM (12-23), subtract 12
+                if adjustedStartHour >= 12 { adjustedStartHour -= 12 }
+                else { adjustedStartHour += 12 }
+                if adjustedEndHour >= 12 { adjustedEndHour -= 12 }
+                else { adjustedEndHour += 12 }
             }
 
-            var end12 = event.endHour
-            if end12 > 12 {
-                end12 = end12 - 12
-            } else if end12 == 0 {
-                end12 = 12
-            }
+            // Convert 0 to 12 for 12-hour clock display
+            if adjustedStartHour == 0 { adjustedStartHour = 12 }
+            if adjustedStartHour > 12 { adjustedStartHour -= 12 }
+            if adjustedEndHour == 0 { adjustedEndHour = 12 }
+            if adjustedEndHour > 12 { adjustedEndHour -= 12 }
 
-            startAngle = .degrees((start12 / 12) * 360 - 90)
-            endAngle = .degrees((end12 / 12) * 360 - 90)
+            startAngle = .degrees((adjustedStartHour / 12) * 360 - 90)
+            endAngle = .degrees((adjustedEndHour / 12) * 360 - 90)
         }
 
-        let fillOpacity: Double
-        let strokeOpacity: Double
-        let strokeWidth: CGFloat
-
-        if onEventTimeChange != nil || highlightedEventId != nil {
-            
-            fillOpacity = isHighlighted ? 0.85 : 0.15
-            strokeOpacity = isHighlighted ? 1.0 : 0.3
-            strokeWidth = isHighlighted ? 2.5 : 1.5
-        } else {
-            
-            fillOpacity = 0.30
-            strokeOpacity = 0.8
-            strokeWidth = 1.5
-        }
+        // Enhanced visual feedback for highlighted arc
+        let fillOpacity: Double = isHighlighted ? 0.50 : 0.30
+        let strokeOpacity: Double = isHighlighted ? 1.0 : 0.8
+        let strokeWidth: CGFloat = isHighlighted ? 2.5 : 1.5
 
         return RadialSegment(startAngle: startAngle, endAngle: endAngle)
             .fill(event.color.opacity(fillOpacity))
@@ -458,6 +704,8 @@ private extension CircularDayDial {
                     .stroke(event.color.opacity(strokeOpacity), lineWidth: strokeWidth)
             )
             .frame(width: dialSize, height: dialSize)
+            .scaleEffect(isHighlighted ? 1.02 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isHighlighted)
     }
     
     var centerContent: some View {
@@ -506,21 +754,21 @@ private extension CircularDayDial {
         
         CircularDayDial(
             events: [
-                DayEvent(title: "Morning Routine", startHour: 6, duration: 2, color: .purple, category: "Personal",
+                DayEvent(title: "Morning Routine", startHour: 6, endHour: 8, color: .purple, category: "Personal",
                         emoji: "☀️", description: "Start the day", participants: [], isCompleted: false),
-                DayEvent(title: "Deep Work", startHour: 9, duration: 4, color: .blue, category: "Work",
+                DayEvent(title: "Deep Work", startHour: 9, endHour: 13, color: .blue, category: "Work",
                         emoji: "💻", description: "Focus time", participants: [], isCompleted: false),
-                DayEvent(title: "Lunch Break", startHour: 13, duration: 1, color: .green, category: "Break",
+                DayEvent(title: "Lunch Break", startHour: 13, endHour: 14, color: .green, category: "Break",
                         emoji: "🍔", description: "Lunch time", participants: [], isCompleted: false),
-                DayEvent(title: "Meetings", startHour: 14, duration: 2, color: .orange, category: "Work",
+                DayEvent(title: "Meetings", startHour: 14, endHour: 16, color: .orange, category: "Work",
                         emoji: "📅", description: "Team sync", participants: ["John", "Sarah"], isCompleted: false),
-                DayEvent(title: "Exercise", startHour: 17, duration: 1, color: .red, category: "Health",
+                DayEvent(title: "Exercise", startHour: 17, endHour: 18, color: .red, category: "Health",
                         emoji: "🏃", description: "Workout", participants: [], isCompleted: false),
-                DayEvent(title: "Dinner", startHour: 19, duration: 1, color: .yellow, category: "Personal",
+                DayEvent(title: "Dinner", startHour: 19, endHour: 20, color: .yellow, category: "Personal",
                         emoji: "🍽️", description: "Family dinner", participants: [], isCompleted: false),
-                DayEvent(title: "Reading", startHour: 21, duration: 1.5, color: .cyan, category: "Learning",
+                DayEvent(title: "Reading", startHour: 21, endHour: 22.5, color: .cyan, category: "Learning",
                         emoji: "📚", description: "Personal development", participants: [], isCompleted: false),
-                DayEvent(title: "Sleep", startHour: 23, duration: 7, color: .indigo, category: "Rest",
+                DayEvent(title: "Sleep", startHour: 23, endHour: 30, color: .indigo, category: "Rest",
                         emoji: "😴", description: "Rest time", participants: [], isCompleted: false)
             ],
             selectedDate: Date()

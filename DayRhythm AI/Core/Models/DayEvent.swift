@@ -8,19 +8,43 @@
 import SwiftUI
 
 struct DayEvent: Identifiable {
-    let id = UUID()
+    let id: UUID
     let title: String
     let startHour: Double
-    let duration: Double
+    let endHour: Double
     let color: Color
-    let category: String 
+    let category: String
     let emoji: String
     let description: String
     let participants: [String]
     let isCompleted: Bool
 
-    var endHour: Double {
-        startHour + duration
+    init(
+        id: UUID = UUID(),
+        title: String,
+        startHour: Double,
+        endHour: Double,
+        color: Color,
+        category: String,
+        emoji: String,
+        description: String,
+        participants: [String],
+        isCompleted: Bool
+    ) {
+        self.id = id
+        self.title = title
+        self.startHour = startHour
+        self.endHour = endHour
+        self.color = color
+        self.category = category
+        self.emoji = emoji
+        self.description = description
+        self.participants = participants
+        self.isCompleted = isCompleted
+    }
+
+    var duration: Double {
+        endHour - startHour
     }
 
     var timeString: String {
@@ -49,9 +73,9 @@ struct DayEvent: Identifiable {
 
 extension DayEvent {
     static let sampleEvents: [DayEvent] = [
-        DayEvent(title: "Morning Routine", startHour: 6, duration: 3, color: .red, category: "Personal",
+        DayEvent(title: "Morning Routine", startHour: 6, endHour: 9, color: .red, category: "Personal",
                 emoji: "☀️", description: "Start the day", participants: [], isCompleted: false),
-        DayEvent(title: "Focus Work", startHour: 10, duration: 5, color: .green, category: "Work",
+        DayEvent(title: "Focus Work", startHour: 10, endHour: 15, color: .green, category: "Work",
                 emoji: "💻", description: "Deep work time", participants: [], isCompleted: false)
     ]
 }

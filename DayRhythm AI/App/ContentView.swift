@@ -9,10 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedDate = Date()
-    
+
     var body: some View {
         MainTabView()
             .fontDesign(.rounded)
+            .hideKeyboardOnTap()
     }
 }
 

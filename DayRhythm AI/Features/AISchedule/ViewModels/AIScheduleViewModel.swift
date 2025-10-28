@@ -61,8 +61,8 @@ class AIScheduleViewModel: ObservableObject {
 
         let newEvent = DayEvent(
             title: task.title,
-            startHour: task.startTime,  
-            duration: task.duration,
+            startHour: task.startTime,
+            endHour: task.startTime + task.duration,
             color: color,
             category: "AI Generated",
             emoji: task.emoji,

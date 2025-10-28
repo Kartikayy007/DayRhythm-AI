@@ -18,7 +18,6 @@ struct TaskDetailSheet: View {
     @State private var shouldRefreshTask = false
 
     var refreshedTask: DayEvent {
-        // Try to get the latest version from viewModel
         return viewModel.events.first(where: { $0.id == task.id }) ?? task
     }
 
@@ -31,7 +30,7 @@ struct TaskDetailSheet: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .semibold))
                             .frame(width: 40, height: 40)
-                    }.buttonStyle(.glass)
+                    }.glassEffect(.regular)
 
                     Spacer()
 
@@ -41,7 +40,7 @@ struct TaskDetailSheet: View {
                         Image(systemName: "pencil")
                             .font(.system(size: 16, weight: .semibold))
                             .frame(width: 40, height: 40)
-                    }.buttonStyle(.glass)
+                    }.glassEffect()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
@@ -67,7 +66,6 @@ struct TaskDetailSheet: View {
                             )
                             .frame(maxWidth: .infinity, alignment: .center)
 
-                        // Task Title
                         VStack(alignment: .leading, spacing: 4) {
                             Text(task.title)
                                 .font(.system(size: 28, weight: .bold))
@@ -81,43 +79,6 @@ struct TaskDetailSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 20)
 
-                        // Duration and Category
-                        VStack(spacing: 12) {
-                            HStack {
-                                Text("Duration")
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.6))
-
-                                Spacer()
-
-                                Text(task.durationString)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                            }
-
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-
-                            HStack {
-                                Text("Category")
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.6))
-
-                                Spacer()
-
-                                Text(task.category)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white.opacity(0.05))
-                        )
-                        .padding(.horizontal, 20)
-
-                        // Delete Button
                         Button(action: {
                             showDeleteConfirm = true
                         }) {
@@ -172,7 +133,7 @@ struct TaskDetailSheet: View {
         task: DayEvent(
             title: "Team Meeting",
             startHour: 10,
-            duration: 1.5,
+            endHour: 11.5,
             color: Color(red: 255/255, green: 215/255, blue: 143/255),
             category: "Work",
             emoji: "👥",
@@ -184,7 +145,7 @@ struct TaskDetailSheet: View {
             DayEvent(
                 title: "Team Meeting",
                 startHour: 10,
-                duration: 1.5,
+                endHour: 11.5,
                 color: Color(red: 255/255, green: 215/255, blue: 143/255),
                 category: "Work",
                 emoji: "👥",
@@ -195,7 +156,7 @@ struct TaskDetailSheet: View {
             DayEvent(
                 title: "Deep Work",
                 startHour: 9,
-                duration: 3,
+                endHour: 12,
                 color: .blue,
                 category: "Work",
                 emoji: "💻",
