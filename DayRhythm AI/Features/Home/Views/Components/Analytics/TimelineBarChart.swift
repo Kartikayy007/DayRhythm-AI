@@ -15,19 +15,19 @@ struct TimelineBarChart: View {
     struct HourData: Identifiable {
         let id = UUID()
         let hour: Int
-        let intensity: Double // 0.0 to 1.0 (free to fully booked)
+        let intensity: Double
         let color: Color
         let taskName: String?
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Title
+            
             Text("24-Hour Timeline")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.white.opacity(0.6))
 
-            // Chart
+            
             GeometryReader { geometry in
                 HStack(alignment: .bottom, spacing: 2) {
                     ForEach(0..<24) { hour in
@@ -35,7 +35,7 @@ struct TimelineBarChart: View {
                         let intensity = data?.intensity ?? 0.0
 
                         VStack(spacing: 0) {
-                            // Bar
+                            
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(barColor(for: hour, data: data))
                                 .frame(width: (geometry.size.width - 46) / 24)
@@ -46,7 +46,7 @@ struct TimelineBarChart: View {
                                     }
                                 }
 
-                            // Hour label (show every 3 hours)
+                            
                             if hour % 3 == 0 {
                                 Text("\(hour)")
                                     .font(.system(size: 8))
@@ -63,7 +63,7 @@ struct TimelineBarChart: View {
             }
             .frame(height: 100)
 
-            // Selected hour detail
+            
             if let hour = selectedHour,
                let data = hourlyData.first(where: { $0.hour == hour }) {
                 HStack {
@@ -106,7 +106,7 @@ struct TimelineBarChart: View {
             return data.color.opacity(0.6)
         }
 
-        // Free time
+        
         return Color.white.opacity(0.1)
     }
 }

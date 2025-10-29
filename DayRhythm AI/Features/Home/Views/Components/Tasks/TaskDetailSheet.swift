@@ -16,6 +16,8 @@ struct TaskDetailSheet: View {
     @State private var showDeleteConfirm = false
     @State private var showEditSheet = false
     @State private var shouldRefreshTask = false
+    @State private var taskInsight: String = ""
+    @State private var isLoadingInsight = false
 
     var refreshedTask: DayEvent {
         return viewModel.events.first(where: { $0.id == task.id }) ?? task
@@ -79,6 +81,14 @@ struct TaskDetailSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 20)
 
+                        
+                        AIInsightView(
+                            insight: taskInsight,
+                            isLoading: isLoadingInsight
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+
                         Button(action: {
                             showDeleteConfirm = true
                         }) {
@@ -122,7 +132,14 @@ struct TaskDetailSheet: View {
             )
         }
         .onChange(of: shouldRefreshTask) { _ in
-            // Dial will update automatically as the task reference changes
+        }
+        .onAppear {
+            Task {
+                isLoadingInsight = true
+                let insight = await GroqService.shared.generateTaskInsight(for: task)
+                taskInsight = insight
+                isLoadingInsight = false
+            }
         }
     }
 }

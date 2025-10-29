@@ -23,65 +23,74 @@ struct TaskCard: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            
-            VStack(alignment: .leading, spacing: 4) {
-                
+        ZStack(alignment: .bottomTrailing) {
+            VStack(alignment: .leading, spacing: 12) {
                 if !isCompleted {
-                    Text(timeString)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(textColor.opacity(0.7))
+                    HStack {
+                        Image(systemName: "clock")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(textColor.opacity(0.6))
+
+                        Text(timeString)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(textColor.opacity(0.7))
+                    }
                 }
 
-                
                 HStack(spacing: 8) {
                     Text(emoji)
-                        .font(.system(size: 20))
+                        .font(.system(size: 32))
 
                     Text(title)
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundColor(textColor)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                
                 Text(description)
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(textColor.opacity(0.7))
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(textColor.opacity(0.6))
                     .lineLimit(2)
 
-                
                 if !isCompleted {
                     HStack(spacing: 8) {
                         Text("Today")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(textColor.opacity(0.6))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 Capsule()
-                                    .fill(textColor.opacity(0.15))
+                                    .fill(textColor.opacity(0.12))
                             )
 
                         Text(duration)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(textColor.opacity(0.6))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 Capsule()
-                                    .fill(textColor.opacity(0.15))
+                                    .fill(textColor.opacity(0.12))
                             )
                     }
-                    .padding(.top, 8)
                 }
             }
-            .padding(.leading, 20)
-            .padding(.vertical, 20)
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
+            Circle()
+                .fill(textColor.opacity(0.08))
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(textColor.opacity(0.6))
+                )
+                .padding(16)
         }
         .background(
-            RoundedRectangle(cornerRadius: 26)
+            RoundedRectangle(cornerRadius: 40)
                 .fill(Color.white)
         )
         .onTapGesture {

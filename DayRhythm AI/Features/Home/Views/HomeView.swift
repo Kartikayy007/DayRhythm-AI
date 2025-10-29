@@ -27,10 +27,9 @@ struct HomeView: View {
                             selectedDate: viewModel.selectedDate,
                             highlightedEventId: viewModel.currentTaskId,
                             onEventTimeChange: { eventId, newStartHour, newEndHour in
-                                // Update the event with new times
                                 if let event = viewModel.events.first(where: { $0.id == eventId }) {
                                     let updatedEvent = DayEvent(
-                                        id: event.id,  // Preserve the original ID
+                                        id: event.id,  
                                         title: event.title,
                                         startHour: newStartHour,
                                         endHour: newEndHour,
@@ -55,7 +54,7 @@ struct HomeView: View {
                         .gesture(
                             DragGesture()
                                 .onEnded { value in
-                                    // Only allow day switching when NOT dragging an arc
+                                    
                                     guard !isArcDragging else { return }
 
                                     if value.translation.width > 50 {

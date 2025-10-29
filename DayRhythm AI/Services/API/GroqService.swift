@@ -213,6 +213,83 @@ class GroqService {
         }
     }
 
+    func generateTaskInsight(for task: DayEvent) async -> String {
+        let systemPrompt = """
+        You are a productivity insights assistant. Analyze a single task and provide a personalized 2-3 sentence insight.
+
+        Focus on:
+        - Optimal timing and energy levels for this type of task
+        - Productivity tips specific to this activity
+        - Time management suggestions based on duration
+        - Contextual advice that feels personal and actionable
+
+        Return ONLY plain text (no JSON, no quotes). Be conversational and encouraging.
+        """
+
+        let userMessage = """
+        Analyze this task:
+        - Title: \(task.title)
+        - Duration: \(task.durationString)
+        - Time: \(task.timeString)
+        - Category: \(task.category)
+        - Description: \(task.description)
+
+        Provide a brief, personalized insight (2-3 sentences) about how to approach this task effectively.
+        """
+
+        var request = URLRequest(url: URL(string: baseURL)!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let payload: [String: Any] = [
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": userMessage]
+            ],
+            "temperature": 0.8,
+            "max_tokens": 150
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return generateFallbackTaskInsight(for: task)
+            }
+
+            let decodedResponse = try JSONDecoder().decode(GroqResponse.self, from: data)
+
+            guard let content = decodedResponse.choices.first?.message.content else {
+                return generateFallbackTaskInsight(for: task)
+            }
+
+            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch {
+            print("Error generating task insight: \(error)")
+            return generateFallbackTaskInsight(for: task)
+        }
+    }
+
+    private func generateFallbackTaskInsight(for task: DayEvent) -> String {
+        let hour = Int(task.startHour)
+        let duration = task.duration
+
+        if hour < 10 {
+            return "Morning tasks like this benefit from fresh mental energy. \(task.durationString) is a solid duration - consider tackling the hardest parts first while your focus is strongest."
+        } else if hour < 14 {
+            return "Mid-day scheduling gives you momentum from earlier wins. For \(task.durationString), break it into focused 25-minute chunks with short breaks between to maintain peak performance."
+        } else if hour < 18 {
+            return "Afternoon tasks work well when you match them to your energy. Since this runs \(task.durationString), consider pairing it with a quick energizing break or snack to stay sharp throughout."
+        } else {
+            return "Evening tasks can be highly productive with the right approach. For \(task.durationString), minimize distractions and create a comfortable environment to help you stay engaged."
+        }
+    }
+
     private func generateFallbackInsights(events: [DayEvent], totalHours: Double, freeHours: Double) -> [String] {
         var insights: [String] = []
 

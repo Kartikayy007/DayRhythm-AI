@@ -219,7 +219,7 @@ private struct ExpandableHeaderBackground: View {
                 .cornerRadius(cornerRadius, corners: [.bottomLeft, .bottomRight])
                 .frame(
                     width: geometry.size.width,
-                    height: height + 60 
+                    height: height + 60
                 )
                 .offset(y: -60)
                 .shadow(
