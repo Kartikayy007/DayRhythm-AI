@@ -241,7 +241,12 @@ struct CircularDayDial: View {
                 ForEach(filteredEvents) { event in
                     let isHighlighted = (highlightedEventId == event.id || localHighlightedEventId == event.id)
                     eventArc(for: event, isHighlighted: isHighlighted)
-                        .highPriorityGesture(
+                        .onTapGesture {
+                            if localHighlightedEventId != event.id {
+                                onEventTap?(event)
+                            }
+                        }
+                        .gesture(
                             LongPressGesture(minimumDuration: 0.3)
                                 .onEnded { _ in
                                     // Trigger haptic feedback when hold starts
@@ -271,18 +276,6 @@ struct CircularDayDial: View {
                                     }
                                 )
                         )
-                        .onTapGesture {
-                            if localHighlightedEventId == event.id {
-                                // If tapping the selected arc, deselect it
-                                withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
-                                    localHighlightedEventId = nil
-                                    selectedArcId = nil
-                                }
-                            } else {
-                                // Otherwise, open the task detail
-                                onEventTap?(event)
-                            }
-                        }
                 }
 
                 currentTimeIndicator

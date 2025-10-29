@@ -112,11 +112,10 @@ struct TaskDetailSheet: View {
             Text("This action cannot be undone.")
         }
         .sheet(isPresented: $showEditSheet) {
-            EditTaskSheet(
-                originalTask: task,
+            CreateTaskSheet(
                 viewModel: viewModel,
+                existingTask: task,
                 onUpdateComplete: {
-                    // Close edit sheet and refresh
                     showEditSheet = false
                     shouldRefreshTask.toggle()
                 }

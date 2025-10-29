@@ -11,13 +11,16 @@ struct CreateTaskSheet: View {
     @ObservedObject var viewModel: HomeViewModel
     @Environment(\.dismiss) var dismiss
 
+    var existingTask: DayEvent? = nil  
+    var onUpdateComplete: (() -> Void)? = nil  
+
     @State private var title = ""
     @State private var selectedEmoji = "🤞"
     @State private var selectedColor = Color(red: 0, green: 0, blue: 0)
     @State private var selectedDate = Date()
     @State private var startTime = Date()
     @State private var endTime = Date().addingTimeInterval(900)
-    
+
     @State private var alertCount = 3
     @State private var repeatEnabled = false
     @State private var notes = ""
@@ -28,6 +31,32 @@ struct CreateTaskSheet: View {
 
     @FocusState private var isNotesFieldFocused: Bool
     @FocusState private var isTitleFieldFocused: Bool
+
+    private var isEditMode: Bool {
+        existingTask != nil
+    }
+
+    private var previewEvent: DayEvent {
+        let calendar = Calendar.current
+        let startHour = Double(calendar.component(.hour, from: startTime)) +
+                       Double(calendar.component(.minute, from: startTime)) / 60
+        let endHourCalculated = Double(calendar.component(.hour, from: endTime)) +
+                     Double(calendar.component(.minute, from: endTime)) / 60
+        let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
+
+        return DayEvent(
+            id: existingTask?.id ?? UUID(),
+            title: title.isEmpty ? "New Task" : title,
+            startHour: startHour,
+            endHour: endHour,
+            color: selectedColor,
+            category: existingTask?.category ?? "Custom",
+            emoji: selectedEmoji,
+            description: notes,
+            participants: existingTask?.participants ?? [],
+            isCompleted: existingTask?.isCompleted ?? false
+        )
+    }
 
     private var dateString: String {
         let formatter = DateFormatter()
@@ -77,6 +106,32 @@ struct CreateTaskSheet: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
+                        
+                        if isEditMode {
+                            CircularDayDial(
+                                events: [previewEvent],
+                                selectedDate: selectedDate,
+                                highlightedEventId: previewEvent.id,
+                                onEventTimeChange: { eventId, newStartHour, newEndHour in
+                                    var startComponents = Calendar.current.dateComponents([.year, .month, .day], from: startTime)
+                                    startComponents.hour = Int(newStartHour)
+                                    startComponents.minute = Int((newStartHour - Double(Int(newStartHour))) * 60)
+                                    if let newStart = Calendar.current.date(from: startComponents) {
+                                        startTime = newStart
+                                    }
+
+                                    var endComponents = Calendar.current.dateComponents([.year, .month, .day], from: endTime)
+                                    endComponents.hour = Int(newEndHour)
+                                    endComponents.minute = Int((newEndHour - Double(Int(newEndHour))) * 60)
+                                    if let newEnd = Calendar.current.date(from: endComponents) {
+                                        endTime = newEnd
+                                    }
+                                }
+                            )
+                            .id("\(startTime)-\(endTime)-\(selectedColor)-\(selectedEmoji)")
+                            .padding(.bottom, 8)
+                        }
+
                         ZStack {
                             CreateTaskPreviewCard(
                                 title: $title,
@@ -86,7 +141,7 @@ struct CreateTaskSheet: View {
                                 endTime: endTime,
                                 isTitleFocused: $isTitleFieldFocused
                             )
-                            
+
                             HStack {
                                 Rectangle()
                                     .fill(Color.clear)
@@ -136,7 +191,7 @@ struct CreateTaskSheet: View {
                                 value: "Nudge",
                                 showChevron: true,
                                 action: {
-                                    // later stuff
+                                    
                                 }
                             )
 
@@ -186,8 +241,8 @@ struct CreateTaskSheet: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Button(action: createTask) {
-                Text("Add to schedule")
+            Button(action: isEditMode ? updateTask : createTask) {
+                Text(isEditMode ? "Save changes" : "Add to schedule")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -234,10 +289,57 @@ struct CreateTaskSheet: View {
             .presentationDragIndicator(.visible)
         }
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isTitleFieldFocused = true
+            if let task = existingTask {
+                
+                title = task.title
+                notes = task.description
+                selectedEmoji = task.emoji
+                selectedColor = task.color
+
+                var startComponents = Calendar.current.dateComponents([.year, .month, .day], from: selectedDate)
+                startComponents.hour = Int(task.startHour)
+                startComponents.minute = Int((task.startHour - Double(Int(task.startHour))) * 60)
+                startTime = Calendar.current.date(from: startComponents) ?? Date()
+
+                var endComponents = Calendar.current.dateComponents([.year, .month, .day], from: selectedDate)
+                endComponents.hour = Int(task.endHour)
+                endComponents.minute = Int((task.endHour - Double(Int(task.endHour))) * 60)
+                endTime = Calendar.current.date(from: endComponents) ?? Date()
+            } else {
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isTitleFieldFocused = true
+                }
             }
         }
+    }
+
+    private func updateTask() {
+        guard let originalTask = existingTask else { return }
+
+        let calendar = Calendar.current
+        let startHour = Double(calendar.component(.hour, from: startTime)) +
+                       Double(calendar.component(.minute, from: startTime)) / 60
+        let endHourCalculated = Double(calendar.component(.hour, from: endTime)) +
+                     Double(calendar.component(.minute, from: endTime)) / 60
+        let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
+
+        let updatedEvent = DayEvent(
+            id: originalTask.id,
+            title: title.isEmpty ? "New Task" : title,
+            startHour: startHour,
+            endHour: endHour,
+            color: selectedColor,
+            category: originalTask.category,
+            emoji: selectedEmoji,
+            description: notes,
+            participants: originalTask.participants,
+            isCompleted: originalTask.isCompleted
+        )
+
+        viewModel.updateEvent(originalTask, with: updatedEvent)
+        onUpdateComplete?()
+        dismiss()
     }
 
     private func createTask() {
@@ -312,7 +414,7 @@ struct DatePickerSheet: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                // Header
+                
                 HStack {
                     Text("Select Date")
                         .font(.system(size: 20, weight: .semibold))
@@ -332,7 +434,7 @@ struct DatePickerSheet: View {
                 .padding(.horizontal)
                 .padding(.top)
 
-                // Date Picker with glass effect
+                
                 VStack(spacing: 12) {
                     Image(systemName: "calendar")
                         .font(.system(size: 24))
@@ -375,7 +477,7 @@ struct TimePickerSheet: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                // Header
+                
                 HStack {
                     Text("Select Time")
                         .font(.system(size: 20, weight: .semibold))
@@ -396,7 +498,7 @@ struct TimePickerSheet: View {
                 .padding(.top)
 
                 VStack(spacing: 16) {
-                    // Start Time Section
+                    
                     VStack(alignment: .leading, spacing: 12) {
                         Text("START TIME")
                             .font(.system(size: 12, weight: .semibold))
@@ -424,7 +526,7 @@ struct TimePickerSheet: View {
                         .glassEffect(in: .rect(cornerRadius: 12))
                     }
 
-                    // End Time Section
+                    
                     VStack(alignment: .leading, spacing: 12) {
                         Text("END TIME")
                             .font(.system(size: 12, weight: .semibold))
@@ -454,7 +556,7 @@ struct TimePickerSheet: View {
                 }
                 .padding(.horizontal)
 
-                // Duration Display
+                
                 HStack(spacing: 12) {
                     Image(systemName: "timer")
                         .font(.system(size: 16))
