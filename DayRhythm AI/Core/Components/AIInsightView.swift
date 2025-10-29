@@ -2,7 +2,7 @@
 //  AIInsightView.swift
 //  DayRhythm AI
 //
-//  Created by Claude Code on 29/10/25.
+//  Created by kartikay on 29/10/25.
 //
 
 import SwiftUI

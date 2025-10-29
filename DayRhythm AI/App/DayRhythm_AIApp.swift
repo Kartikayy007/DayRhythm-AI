@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct DayRhythm_AIApp: App {
+    @StateObject private var appState = AppState.shared
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(appState)
         }
     }
 }

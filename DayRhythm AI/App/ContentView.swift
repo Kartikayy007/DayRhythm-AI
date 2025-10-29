@@ -8,16 +8,25 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedDate = Date()
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
-        MainTabView()
-            .fontDesign(.rounded)
-            .hideKeyboardOnTap()
+        Group {
+            if appState.isAuthenticated {
+                
+                MainTabView()
+                    .fontDesign(.rounded)
+                    .hideKeyboardOnTap()
+            } else {
+                
+                AuthenticationGateView()
+            }
+        }
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(AppState.shared)
 }
  

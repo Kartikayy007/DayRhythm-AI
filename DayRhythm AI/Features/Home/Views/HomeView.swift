@@ -69,26 +69,14 @@ struct HomeView: View {
                                 }
                         )
                         
-                        VStack(spacing: 5) {
-                            ForEach(viewModel.events) { event in
-                                TaskCard(
-                                    title: event.title,
-                                    description: event.description,
-                                    timeString: event.isCompleted ? "" : event.timeString,
-                                    duration: event.durationString,
-                                    color: event.color,
-                                    emoji: event.emoji,
-                                    isCompleted: event.isCompleted,
-                                    participants: event.participants,
-                                    onTap: {
-                                        selectedTask = event
-                                    }
-                                )
+                        TimelineCalendarView(
+                            homeViewModel: viewModel,
+                            onEventTap: { event in
+                                selectedTask = event
                             }
-                        }
-                        .animation(.easeInOut(duration: 0.3), value: viewModel.events.count)
+                        )
                         .padding(.bottom, 100)
-                        .padding(.top, 10)
+                        .padding(.top, 20)
                         
                     }
                 }

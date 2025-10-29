@@ -11,7 +11,7 @@
 import SwiftUI
 import Combine
 
-// Typewriter animation view
+
 struct TypewriterText: View {
     let text: String
     @State private var animatedText = ""
@@ -28,10 +28,10 @@ struct TypewriterText: View {
                 animateText()
             }
             .onChange(of: text) { _ in
-                // Fade out
+                
                 isVisible = false
 
-                // Reset and fade in with new text
+                
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     charIndex = 0
                     animatedText = ""
@@ -42,7 +42,7 @@ struct TypewriterText: View {
     }
 
     private func animateText() {
-        // Small delay before starting to type
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             Timer.scheduledTimer(withTimeInterval: 0.025, repeats: true) { timer in
                 if charIndex < text.count {
@@ -67,7 +67,7 @@ struct AIScheduleView: View {
         let hour = Calendar.current.component(.hour, from: Date())
 
         switch hour {
-        case 0..<12:  // Morning
+        case 0..<12:  
             return [
                 "What tasks need your attention today?",
                 "Ready to plan your perfect morning?",
@@ -80,7 +80,7 @@ struct AIScheduleView: View {
                 "Ready to seize the day?",
                 "What would you like to accomplish?"
             ]
-        case 12..<17: // Afternoon
+        case 12..<17: 
             return [
                 "What's on your afternoon agenda?",
                 "How can I help this afternoon?",
@@ -93,7 +93,7 @@ struct AIScheduleView: View {
                 "What tasks remain for today?",
                 "Let's keep the momentum going!"
             ]
-        case 17..<22: // Evening
+        case 17..<22: 
             return [
                 "Planning for tomorrow already?",
                 "Wrapping up today's tasks?",
@@ -106,7 +106,7 @@ struct AIScheduleView: View {
                 "Preparing for tomorrow?",
                 "How can I help this evening?"
             ]
-        default:      // Night
+        default:      
             return [
                 "Burning the midnight oil?",
                 "Late night productivity mode?",
@@ -223,7 +223,7 @@ struct AIScheduleView: View {
                                 }
                             }
                         } else {
-                            // Empty state - no suggestions when tasks are visible
+                            
                             Spacer()
                                 .frame(height: 100)
                         }
@@ -235,7 +235,6 @@ struct AIScheduleView: View {
                 }
 
                 VStack(spacing: 12) {
-                    // Horizontal scrolling suggestions
                     if aiViewModel.parsedTasks.isEmpty && aiViewModel.userInput.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
@@ -308,11 +307,11 @@ struct AIScheduleView: View {
                         .frame(height: 44)
                     }
 
-                    // Text input bar
+                    
                     HStack(spacing: 16) {
-                        // Plus button on the left
+                        
                         Button(action: {
-                            // Plus action - could open attachments or options
+                            
                         }) {
                             Image(systemName: "plus")
                                 .font(.system(size: 22, weight: .medium))
@@ -324,7 +323,7 @@ struct AIScheduleView: View {
                                 )
                         }
 
-                        // Text field with mic button
+                        
                         HStack(spacing: 12) {
                             TextField("Ask anything", text: $aiViewModel.userInput)
                                 .font(.system(size: 17, weight: .regular))
@@ -338,16 +337,16 @@ struct AIScheduleView: View {
                                     }
                                 }
 
-                            // Mic button inside text field
+                            
                             Button(action: {
-                                // Mic action
+                                
                             }) {
                                 Image(systemName: "mic.fill")
                                     .font(.system(size: 18))
                                     .foregroundColor(.white.opacity(0.5))
                             }
 
-                            // Send button (appears when text is entered)
+                            
                             if !aiViewModel.userInput.isEmpty {
                                 Button(action: {
                                     isTextEditorFocused = false
@@ -360,18 +359,18 @@ struct AIScheduleView: View {
                                     } else {
                                         Image(systemName: "waveform")
                                             .font(.system(size: 18))
-                                            .foregroundColor(Color(red: 1.0, green: 0.0, blue: 0.6)) // Pink color
+                                            .foregroundColor(Color(red: 1.0, green: 0.0, blue: 0.6)) 
                                     }
                                 }
                                 .disabled(aiViewModel.isLoading)
                             } else {
-                                // Waveform button when no text
+                                
                                 Button(action: {
-                                    // Voice input action
+                                    
                                 }) {
                                     Image(systemName: "waveform")
                                         .font(.system(size: 18))
-                                        .foregroundColor(Color(red: 1.0, green: 0.0, blue: 0.6)) // Pink color
+                                        .foregroundColor(Color(red: 1.0, green: 0.0, blue: 0.6)) 
                                 }
                             }
                         }
