@@ -91,6 +91,12 @@ final class HomeViewModel: ObservableObject {
     func deleteEvent(_ event: DayEvent) {
         let dateKey = dateKeyFor(selectedDate)
         eventsByDate[dateKey]?.removeAll { $0.id == event.id }
+
+        // Cancel all notifications for this event
+        Task {
+            await NotificationService.shared.cancelAllNotifications(for: event.id)
+        }
+
         objectWillChange.send()
     }
 

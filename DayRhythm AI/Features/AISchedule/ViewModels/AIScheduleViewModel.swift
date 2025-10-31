@@ -7,15 +7,16 @@
 
 import SwiftUI
 import Combine
+import UIKit
 
 class AIScheduleViewModel: ObservableObject {
     @Published var userInput: String = ""
     @Published var isLoading: Bool = false
     @Published var parsedTasks: [ParsedTaskUI] = []
     @Published var errorMessage: String?
+    @Published var selectedImage: UIImage?
 
     private let backendService = BackendService.shared
-    private let groqService = GroqService.shared
 
     func parseTask() {
         guard !userInput.isEmpty else { return }
@@ -50,17 +51,17 @@ class AIScheduleViewModel: ObservableObject {
                             parsedTasks.append(uiTask)
                         }
 
-                        print("✅ Added \(results.count) tasks from backend")
+                        
                         userInput = ""
                     } else {
-                        print("⚠️ Backend returned empty array")
+                        
                         errorMessage = "Failed to parse task. Please try again."
                     }
                 }
             } catch let error as BackendError {
                 await MainActor.run {
                     isLoading = false
-                    print("❌ Backend error: \(error.localizedDescription)")
+                    
 
                     
                     switch error {
@@ -77,7 +78,7 @@ class AIScheduleViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    print("❌ Unexpected error: \(error)")
+                    
                     errorMessage = "Something went wrong. Please try again."
                 }
             }
@@ -125,6 +126,90 @@ class AIScheduleViewModel: ObservableObject {
 
     func removeTask(_ task: ParsedTaskUI) {
         parsedTasks.removeAll { $0.id == task.id }
+    }
+
+    // MARK: - Image Handling
+
+    func parseTaskFromImage() {
+        guard let image = selectedImage else { return }
+
+        isLoading = true
+        errorMessage = nil
+
+        let currentPrompt = userInput.isEmpty ? nil : userInput
+
+        Task {
+            do {
+                // Convert UIImage to Data (JPEG format)
+                guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                    await MainActor.run {
+                        isLoading = false
+                        errorMessage = "Failed to process image"
+                    }
+                    return
+                }
+
+                // Parse schedule from image
+                let results = try await backendService.parseScheduleFromImage(
+                    imageData: imageData,
+                    prompt: currentPrompt
+                )
+
+                await MainActor.run {
+                    isLoading = false
+
+                    if !results.isEmpty {
+                        for parsedTask in results {
+                            let duration = parsedTask.endTime - parsedTask.startTime
+                            let uiTask = ParsedTaskUI(
+                                id: UUID(),
+                                title: parsedTask.title,
+                                description: parsedTask.description,
+                                startTime: parsedTask.startTime,
+                                endTime: parsedTask.endTime,
+                                duration: duration,
+                                date: parsedTask.date,
+                                emoji: parsedTask.emoji,
+                                colorHex: parsedTask.colorHex
+                            )
+                            parsedTasks.append(uiTask)
+                        }
+
+                        
+                        userInput = ""
+                        selectedImage = nil // Clear the image after processing
+                    } else {
+                        
+                        errorMessage = "No schedule found in image. Please try a clearer photo."
+                    }
+                }
+            } catch let error as BackendError {
+                await MainActor.run {
+                    isLoading = false
+                    
+
+                    switch error {
+                    case .unauthorized:
+                        errorMessage = "Please sign in to use AI features"
+                    case .networkError:
+                        errorMessage = "Network error. Check your connection."
+                    default:
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    
+                    errorMessage = "Failed to process image. Please try again."
+                }
+            }
+        }
+    }
+
+    func clearImage() {
+        selectedImage = nil
+        errorMessage = nil
     }
 }
 

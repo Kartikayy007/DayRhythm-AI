@@ -35,7 +35,7 @@ struct TaskDetailSheet: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .semibold))
                             .frame(width: 40, height: 40)
-                    }.glassEffect(.regular)
+                    }.glassEffect()
 
                     Spacer()
 
@@ -180,30 +180,14 @@ struct TaskDetailSheet: View {
                 isLoadingInsight = true
 
                 do {
-                    // Use backend service (secure, with auth)
                     let insight = try await BackendService.shared.getTaskInsight(task: task)
                     await MainActor.run {
                         taskInsight = insight
                         isLoadingInsight = false
                     }
-                    print("✅ Received task insight from backend")
-                } catch let error as BackendError {
-                    print("❌ Backend error: \(error.localizedDescription)")
-
-                    // Fallback to direct Groq service
-                    let fallbackInsight = await GroqService.shared.generateTaskInsight(for: task)
-                    await MainActor.run {
-                        taskInsight = fallbackInsight
-                        isLoadingInsight = false
-                    }
-                    print("⚠️ Used fallback Groq service")
                 } catch {
-                    print("❌ Unexpected error: \(error)")
-
-                    // Fallback to direct Groq service
-                    let fallbackInsight = await GroqService.shared.generateTaskInsight(for: task)
                     await MainActor.run {
-                        taskInsight = fallbackInsight
+                        taskInsight = ""
                         isLoadingInsight = false
                     }
                 }

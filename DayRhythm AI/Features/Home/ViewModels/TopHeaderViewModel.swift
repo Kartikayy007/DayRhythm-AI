@@ -55,7 +55,7 @@ final class TopHeaderViewModel: ObservableObject {
     }
 
     func handleProfileTap() {
-        print("Profile tapped")
+        
     }
 
     func handleDaySelection(_ date: Date) {

@@ -772,25 +772,11 @@ private extension CircularDayDial {
         let strokeOpacity: Double = isHighlighted ? 1.0 : 0.8
         let strokeWidth: CGFloat = isHighlighted ? 2.5 : 1.5
 
-        
-        let midAngle = (startAngle.degrees + endAngle.degrees) / 2
-
-        
-        let emojiRadius = (40 + dialSize / 2) / 2
-        let emojiX = cos(midAngle * .pi / 180) * emojiRadius
-        let emojiY = sin(midAngle * .pi / 180) * emojiRadius
-
         return RadialSegment(startAngle: startAngle, endAngle: endAngle)
             .fill(event.color.opacity(fillOpacity))
             .overlay(
                 RadialSegment(startAngle: startAngle, endAngle: endAngle)
                     .stroke(event.color.opacity(strokeOpacity), lineWidth: strokeWidth)
-            )
-            .overlay(
-                
-                Text(event.emoji)
-                    .font(.system(size: 16))
-                    .offset(x: emojiX, y: emojiY)
             )
             .frame(width: dialSize, height: dialSize)
             .scaleEffect(isHighlighted ? 1.02 : 1.0)

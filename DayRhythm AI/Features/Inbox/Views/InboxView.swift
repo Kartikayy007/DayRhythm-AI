@@ -59,10 +59,6 @@ struct InboxView: View {
             .simultaneousGesture(
                 DragGesture(minimumDistance: 30)
                     .onEnded { value in
-                        // Only collapse header when:
-                        // 1. Header is expanded
-                        // 2. User swipes up (negative translation)
-                        // 3. Vertical gesture (more vertical than horizontal)
                         let isUpwardSwipe = value.translation.height < -30
                         let isVerticalGesture = abs(value.translation.height) > abs(value.translation.width) * 1.5
 

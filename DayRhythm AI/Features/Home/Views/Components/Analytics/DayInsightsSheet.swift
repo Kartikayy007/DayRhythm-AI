@@ -12,6 +12,7 @@ struct DayInsightsSheet: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var insights: [String] = []
+    @State private var visualInsights: VisualInsights?
     @State private var isLoadingInsights = false
     @State private var pieChartData: [PieChartView.ChartData] = []
     @State private var timelineData: [TimelineBarChart.HourData] = []
@@ -100,7 +101,50 @@ struct DayInsightsSheet: View {
                         }
                     }
 
-                    
+                    // MARK: - Visual Insights
+                    if let visuals = visualInsights {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("AI Visual Insights")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 20) {
+                                    // Energy Heatmap
+                                    EnergyHeatmapView(heatmapData: visuals.energyHeatmap)
+                                        .frame(width: 320)
+                                        .padding(16)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(Color.white.opacity(0.05))
+                                        )
+
+                                    // Focus Blocks
+                                    FocusBlocksView(focusBlocks: visuals.focusBlocks)
+                                        .frame(width: 320)
+                                        .padding(16)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(Color.white.opacity(0.05))
+                                        )
+
+                                    // Work-Life Balance Gauge
+                                    WorkLifeBalanceGauge(balance: visuals.workLifeBalance)
+                                        .frame(width: 340)
+                                        .padding(16)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(Color.white.opacity(0.05))
+                                        )
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                        }
+                        .padding(.top, 8)
+                    }
+
+
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Text("AI Insights")
@@ -238,47 +282,21 @@ struct DayInsightsSheet: View {
         Task {
             do {
                 
-                let generatedInsights = try await BackendService.shared.getDayInsights(
+                let insightsData = try await BackendService.shared.getDayInsights(
                     date: homeViewModel.selectedDate
                 )
 
                 await MainActor.run {
-                    insights = generatedInsights
+                    insights = insightsData.insights
+                    visualInsights = insightsData.visualInsights
                     isLoadingInsights = false
                 }
-                print("✅ Received \(generatedInsights.count) insights from backend")
-            } catch let error as BackendError {
-                await MainActor.run {
-                    isLoadingInsights = false
-                    print("❌ Backend error: \(error.localizedDescription)")
-
-                    
-                    Task {
-                        let fallbackInsights = await GroqService.shared.generateDayInsights(
-                            events: homeViewModel.events,
-                            date: homeViewModel.selectedDate
-                        )
-                        await MainActor.run {
-                            insights = fallbackInsights
-                        }
-                        print("⚠️ Used fallback Groq service")
-                    }
-                }
+                
             } catch {
                 await MainActor.run {
                     isLoadingInsights = false
-                    print("❌ Unexpected error: \(error)")
-
                     
-                    Task {
-                        let fallbackInsights = await GroqService.shared.generateDayInsights(
-                            events: homeViewModel.events,
-                            date: homeViewModel.selectedDate
-                        )
-                        await MainActor.run {
-                            insights = fallbackInsights
-                        }
-                    }
+                    insights = []
                 }
             }
         }

@@ -86,10 +86,6 @@ struct HomeView: View {
             .simultaneousGesture(
                 DragGesture(minimumDistance: 30)
                     .onEnded { value in
-                        
-                        
-                        
-                        
                         let isUpwardSwipe = value.translation.height < -30
                         let isVerticalGesture = abs(value.translation.height) > abs(value.translation.width) * 1.5
 

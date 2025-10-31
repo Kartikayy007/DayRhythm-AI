@@ -54,12 +54,33 @@ class BackendService {
         return response.data.events
     }
 
-    
+    /// Parse schedule from image using Gemini Vision
+    func parseScheduleFromImage(imageData: Data, prompt: String? = nil) async throws -> [BackendParsedTask] {
+        let endpoint = "\(baseURL)/api/ai/parse-schedule-image"
 
-    
-    
-    
-    func getDayInsights(date: Date) async throws -> [String] {
+        // Convert image to base64
+        let base64Image = imageData.base64EncodedString()
+
+        var body: [String: Any] = ["image": base64Image]
+        if let prompt = prompt {
+            body["prompt"] = prompt
+        }
+
+        let response: ParseScheduleResponse = try await makeAuthenticatedRequest(
+            endpoint: endpoint,
+            method: "POST",
+            body: body
+        )
+
+        return response.data.events
+    }
+
+    // MARK: - Day Insights
+
+    /// Generate AI insights for a specific date
+    /// - Parameter date: Date to analyze
+    /// - Returns: Day insights data with text and visual insights
+    func getDayInsights(date: Date) async throws -> DayInsightsData {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: date)
@@ -73,7 +94,7 @@ class BackendService {
             body: body
         )
 
-        return response.data.insights
+        return response.data
     }
 
     func getTaskInsight(task: DayEvent) async throws -> String {
@@ -158,8 +179,8 @@ class BackendService {
                 do {
                     return try decoder.decode(T.self, from: data)
                 } catch {
-                    print("Decoding error: \(error)")
-                    print("Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
+                    
+                    
                     throw BackendError.decodingError
                 }
 
@@ -190,7 +211,7 @@ class BackendService {
         } catch let error as BackendError {
             throw error
         } catch {
-            print("Network error: \(error)")
+            
             throw BackendError.networkError
         }
     }

@@ -15,18 +15,22 @@ struct HorizonMonthView: UIViewRepresentable {
     func makeUIView(context: Context) -> CalendarView {
         let calendarView = CalendarView(initialContent: makeContent())
 
-        
+
         calendarView.backgroundColor = .clear
 
-        
+        DispatchQueue.main.async {
+            self.configureScrollViews(in: calendarView)
+        }
+
+
         calendarView.daySelectionHandler = { day in
             guard let date = Calendar.current.date(from: day.components) else { return }
 
-            
+
             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
             impactFeedback.impactOccurred()
 
-            
+
             DispatchQueue.main.async {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     viewModel.handleDaySelection(date)
@@ -34,7 +38,7 @@ struct HorizonMonthView: UIViewRepresentable {
             }
         }
 
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             calendarView.scroll(
                 toMonthContaining: viewModel.selectedDate,
@@ -49,7 +53,12 @@ struct HorizonMonthView: UIViewRepresentable {
     func updateUIView(_ uiView: CalendarView, context: Context) {
         uiView.setContent(makeContent())
 
-        
+        // Reconfigure scrollviews to catch lazily-created ones
+        DispatchQueue.main.async {
+            self.configureScrollViews(in: uiView)
+        }
+
+
         if context.coordinator.lastDisplayedMonth != viewModel.selectedDate {
             uiView.scroll(
                 toMonthContaining: viewModel.selectedDate,
@@ -62,6 +71,25 @@ struct HorizonMonthView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(viewModel: viewModel)
+    }
+
+    // Helper method to disable touch delays on internal UIScrollViews
+    private func configureScrollViews(in view: UIView) {
+        for subview in view.subviews {
+            if let scrollView = subview as? UIScrollView {
+                // Disable touch delays for instant tap response
+                scrollView.delaysContentTouches = false
+
+                // CRITICAL: Also disable pan gesture delays
+                scrollView.panGestureRecognizer.delaysTouchesBegan = false
+                scrollView.panGestureRecognizer.delaysTouchesEnded = false
+
+                // Additional optimization
+                scrollView.canCancelContentTouches = true
+            }
+            // Recursively check all subviews
+            configureScrollViews(in: subview)
+        }
     }
 
     private func makeContent() -> CalendarViewContent {

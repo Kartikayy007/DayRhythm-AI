@@ -17,7 +17,7 @@ struct ContentView: View {
     }
 }
 
-#Preview {
+#Preview {  
     ContentView()
         .environmentObject(AppState.shared)
 }

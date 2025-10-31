@@ -54,6 +54,48 @@ struct DayInsightsResponse: Codable {
 
 struct DayInsightsData: Codable {
     let insights: [String]
+    let visualInsights: VisualInsights?
+}
+
+// MARK: - Visual Insights Models
+
+struct VisualInsights: Codable {
+    let energyHeatmap: [EnergyHeatmapItem]
+    let focusBlocks: [FocusBlock]
+    let workLifeBalance: WorkLifeBalance
+}
+
+struct EnergyHeatmapItem: Codable, Identifiable {
+    var id: String { title }
+    let title: String
+    let startTime: Double
+    let endTime: Double
+    let optimalEnergy: String
+    let actualTaskType: String
+    let alignment: String
+    let category: String
+}
+
+struct FocusBlock: Codable, Identifiable {
+    var id: String { title }
+    let title: String
+    let startTime: Double
+    let duration: Double
+    let quality: String
+    let hasBreakAfter: Bool
+    let category: String
+}
+
+struct WorkLifeBalance: Codable {
+    let work: Double
+    let personal: Double
+    let health: Double
+    let other: Double
+    let workPercentage: Int
+    let personalPercentage: Int
+    let healthPercentage: Int
+    let otherPercentage: Int
+    let balanceScore: Int
 }
 
 

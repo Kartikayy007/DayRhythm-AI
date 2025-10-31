@@ -39,6 +39,6 @@ struct MonthPickerView: View {
 
 #Preview {
     MonthPickerView(selectedMonth: .constant(Date())) {
-        print("Done tapped")
+        
     }
 }

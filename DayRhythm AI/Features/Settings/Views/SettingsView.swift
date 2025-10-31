@@ -16,8 +16,9 @@ struct SettingsView: View {
     @State private var showSignOutAlert = false
 
     var body: some View {
-        ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
+        NavigationStack {
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
@@ -110,7 +111,29 @@ struct SettingsView: View {
                             .padding(.horizontal, 20)
                             .padding(.bottom, 12)
 
-                        SettingsRowButton(icon: "bell", title: "Notifications")
+                        NavigationLink(destination: NotificationSettingsView()) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "bell")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(width: 24)
+
+                                Text("Notifications")
+                                    .font(.system(size: 17))
+                                    .foregroundColor(.white)
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.3))
+                            }
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 20)
+                            .background(Color.clear)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+
                         SettingsRowButton(icon: "moon", title: "Dark Mode")
                         SettingsRowButton(icon: "globe", title: "Language")
                         SettingsRowButton(icon: "calendar", title: "First Day of Week")
@@ -219,6 +242,7 @@ struct SettingsView: View {
             }
         } message: {
             Text("Are you sure you want to sign out?")
+        }
         }
     }
 }

@@ -63,6 +63,7 @@ struct AIScheduleView: View {
     @EnvironmentObject var appState: AppState
     @FocusState private var isTextEditorFocused: Bool
     @State private var currentGreetingIndex = Int.random(in: 0..<10)
+    @State private var showImagePicker = false
 
     var greetingMessages: [String] {
         let hour = Calendar.current.component(.hour, from: Date())
@@ -249,7 +250,7 @@ struct AIScheduleView: View {
                 }
 
                 VStack(spacing: 12) {
-                    if aiViewModel.parsedTasks.isEmpty && aiViewModel.userInput.isEmpty {
+                    if aiViewModel.parsedTasks.isEmpty && aiViewModel.userInput.isEmpty && aiViewModel.selectedImage == nil {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
                                 SuggestionPill(
@@ -313,35 +314,79 @@ struct AIScheduleView: View {
                         .frame(height: 44)
                     }
 
+                    // Image Preview
+                    if let selectedImage = aiViewModel.selectedImage {
+                        HStack(spacing: 12) {
+                            Image(uiImage: selectedImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Timetable Image")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+
+                                Text("AI will analyze this image")
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+
+                            Spacer()
+
+                            Button(action: {
+                                aiViewModel.clearImage()
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                        }
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.05))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.appPrimary.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 16)
+                    }
 
                     HStack(spacing: 12) {
-                        TextField("Ask anything", text: $aiViewModel.userInput)
+                        TextField(aiViewModel.selectedImage != nil ? "Add context (optional)" : "Ask anything", text: $aiViewModel.userInput)
                             .font(.system(size: 17, weight: .regular))
                             .foregroundColor(.white)
                             .focused($isTextEditorFocused)
                             .submitLabel(.send)
                             .onSubmit {
-                                if !aiViewModel.userInput.isEmpty {
-                                    isTextEditorFocused = false
+                                isTextEditorFocused = false
+                                if aiViewModel.selectedImage != nil {
+                                    aiViewModel.parseTaskFromImage()
+                                } else if !aiViewModel.userInput.isEmpty {
                                     aiViewModel.parseTask()
                                 }
                             }
 
                         Spacer()
 
-                        
+                        // Plus button - opens image picker
                         Button(action: {
-                            
+                            showImagePicker = true
                         }) {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 20, weight: .medium))
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 24, weight: .medium))
                                 .foregroundColor(.white.opacity(0.6))
                         }
 
-                        
+                        // Send button - sends image or text
                         Button(action: {
-                            if !aiViewModel.userInput.isEmpty {
-                                isTextEditorFocused = false
+                            isTextEditorFocused = false
+                            if aiViewModel.selectedImage != nil {
+                                aiViewModel.parseTaskFromImage()
+                            } else if !aiViewModel.userInput.isEmpty {
                                 aiViewModel.parseTask()
                             }
                         }) {
@@ -352,10 +397,10 @@ struct AIScheduleView: View {
                             } else {
                                 Image(systemName: "arrow.up.circle.fill")
                                     .font(.system(size: 28, weight: .regular))
-                                    .foregroundColor(aiViewModel.userInput.isEmpty ? .white.opacity(0.3) : Color.appPrimary)
+                                    .foregroundColor((aiViewModel.userInput.isEmpty && aiViewModel.selectedImage == nil) ? .white.opacity(0.3) : Color.appPrimary)
                             }
                         }
-                        .disabled(aiViewModel.isLoading || aiViewModel.userInput.isEmpty)
+                        .disabled(aiViewModel.isLoading || (aiViewModel.userInput.isEmpty && aiViewModel.selectedImage == nil))
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -370,6 +415,9 @@ struct AIScheduleView: View {
                     .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 20)
+                .sheet(isPresented: $showImagePicker) {
+                    ImagePicker(selectedImage: $aiViewModel.selectedImage)
+                }
             }
         }
     }

@@ -21,13 +21,18 @@ struct CreateTaskSheet: View {
     @State private var startTime = Date()
     @State private var endTime = Date().addingTimeInterval(900)
 
-    @State private var alertCount = 3
+    @State private var notificationEnabled = false
+    @State private var notificationMinutes: [Int] = []
     @State private var repeatEnabled = false
     @State private var notes = ""
 
     @State private var showColorEmojiPicker = false
     @State private var showDatePicker = false
     @State private var showTimePicker = false
+    @State private var showNotificationPicker = false
+    @State private var showNotificationPermissionAlert = false
+    @State private var showNotificationFailureAlert = false
+    @State private var notificationErrorMessage = ""
 
     @FocusState private var isNotesFieldFocused: Bool
     @FocusState private var isTitleFieldFocused: Bool
@@ -84,6 +89,20 @@ struct CreateTaskSheet: View {
             return "\(hours) hr"
         } else {
             return "\(minutes) min"
+        }
+    }
+
+    private var notificationTitle: String {
+        guard notificationEnabled, !notificationMinutes.isEmpty else {
+            return "No Alerts"
+        }
+
+        let sorted = notificationMinutes.sorted(by: >)
+        if sorted.count == 1 {
+            let mins = sorted[0]
+            return mins == 0 ? "At time of event" : "\(mins) min before"
+        } else {
+            return "\(sorted.count) alerts"
         }
     }
 
@@ -187,11 +206,13 @@ struct CreateTaskSheet: View {
 
                             OptionRow(
                                 icon: "bell",
-                                title: "\(alertCount) Alerts",
-                                value: "Nudge",
+                                title: notificationEnabled ? notificationTitle : "No Alerts",
+                                value: notificationEnabled ? "" : "Set notification",
                                 showChevron: true,
                                 action: {
-                                    
+                                    Task {
+                                        await checkNotificationPermissionAndOpen()
+                                    }
                                 }
                             )
 
@@ -277,7 +298,7 @@ struct CreateTaskSheet: View {
         }
         .sheet(isPresented: $showDatePicker) {
             DatePickerSheet(selectedDate: $selectedDate)
-                .presentationDetents([.height(332)])
+                .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showTimePicker) {
@@ -285,12 +306,20 @@ struct CreateTaskSheet: View {
                 startTime: $startTime,
                 endTime: $endTime
             )
-            .presentationDetents([.height(400)])
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showNotificationPicker) {
+            NotificationPickerSheet(
+                isEnabled: $notificationEnabled,
+                selectedMinutes: $notificationMinutes
+            )
+            .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
         .onAppear {
             if let task = existingTask {
-                
+
                 title = task.title
                 notes = task.description
                 selectedEmoji = task.emoji
@@ -305,12 +334,30 @@ struct CreateTaskSheet: View {
                 endComponents.hour = Int(task.endHour)
                 endComponents.minute = Int((task.endHour - Double(Int(task.endHour))) * 60)
                 endTime = Calendar.current.date(from: endComponents) ?? Date()
+
+                notificationEnabled = task.notificationSettings.enabled
+                notificationMinutes = task.notificationSettings.minutesBefore
             } else {
-                
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     isTitleFieldFocused = true
                 }
             }
+        }
+        .alert("Notification Permission Required", isPresented: $showNotificationPermissionAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: {
+            Text("To receive task reminders, please enable notifications in Settings.")
+        }
+        .alert("Notification Error", isPresented: $showNotificationFailureAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(notificationErrorMessage)
         }
     }
 
@@ -324,6 +371,18 @@ struct CreateTaskSheet: View {
                      Double(calendar.component(.minute, from: endTime)) / 60
         let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
 
+        // Cancel existing notifications
+        Task {
+            await NotificationService.shared.cancelAllNotifications(for: originalTask.id)
+        }
+
+        // Create new notification settings
+        let notificationSettings = NotificationSettings(
+            enabled: notificationEnabled,
+            minutesBefore: notificationMinutes,
+            notificationIds: []
+        )
+
         let updatedEvent = DayEvent(
             id: originalTask.id,
             title: title.isEmpty ? "New Task" : title,
@@ -334,10 +393,37 @@ struct CreateTaskSheet: View {
             emoji: selectedEmoji,
             description: notes,
             participants: originalTask.participants,
-            isCompleted: originalTask.isCompleted
+            isCompleted: originalTask.isCompleted,
+            notificationSettings: notificationSettings
         )
 
         viewModel.updateEvent(originalTask, with: updatedEvent)
+
+        // Schedule new notifications if enabled
+        if notificationEnabled && !notificationMinutes.isEmpty {
+            Task {
+                let identifiers = await NotificationService.shared.scheduleNotifications(
+                    for: updatedEvent,
+                    on: selectedDate,
+                    minutesBeforeOptions: notificationMinutes
+                )
+
+                // Update event with notification IDs
+                if !identifiers.isEmpty {
+                    var finalSettings = notificationSettings
+                    finalSettings.notificationIds = identifiers
+                    var finalEvent = updatedEvent
+                    finalEvent.notificationSettings = finalSettings
+                    viewModel.updateEvent(updatedEvent, with: finalEvent)
+                } else if !notificationMinutes.isEmpty {
+                    // All notifications failed to schedule
+                    await MainActor.run {
+                        showNotificationError("Failed to schedule notifications. The task time may be in the past or notifications are disabled.")
+                    }
+                }
+            }
+        }
+
         onUpdateComplete?()
         dismiss()
     }
@@ -350,6 +436,13 @@ struct CreateTaskSheet: View {
                      Double(calendar.component(.minute, from: endTime)) / 60
         let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
 
+        // Create notification settings
+        let notificationSettings = NotificationSettings(
+            enabled: notificationEnabled,
+            minutesBefore: notificationMinutes,
+            notificationIds: []
+        )
+
         let newEvent = DayEvent(
             title: title.isEmpty ? "New Task" : title,
             startHour: startHour,
@@ -359,11 +452,78 @@ struct CreateTaskSheet: View {
             emoji: selectedEmoji,
             description: notes,
             participants: [],
-            isCompleted: false
+            isCompleted: false,
+            notificationSettings: notificationSettings
         )
 
         viewModel.addEvent(newEvent, repeatDaily: repeatEnabled)
+
+        // Schedule notifications if enabled
+        if notificationEnabled && !notificationMinutes.isEmpty {
+            Task {
+                let identifiers = await NotificationService.shared.scheduleNotifications(
+                    for: newEvent,
+                    on: selectedDate,
+                    minutesBeforeOptions: notificationMinutes
+                )
+
+                if !identifiers.isEmpty {
+                    var updatedSettings = notificationSettings
+                    updatedSettings.notificationIds = identifiers
+                    var updatedEvent = newEvent
+                    updatedEvent.notificationSettings = updatedSettings
+                    viewModel.updateEvent(newEvent, with: updatedEvent)
+                } else if !notificationMinutes.isEmpty {
+                    // All notifications failed to schedule
+                    await MainActor.run {
+                        showNotificationError("Failed to schedule notifications. The task time may be in the past or notifications are disabled.")
+                    }
+                }
+            }
+        }
+
         dismiss()
+    }
+
+    // MARK: - Notification Permission Handling
+
+    private func checkNotificationPermissionAndOpen() async {
+        let status = await NotificationService.shared.checkAuthorizationStatus()
+
+        switch status {
+        case .authorized:
+            // Permission granted, open picker
+            await MainActor.run {
+                showNotificationPicker = true
+            }
+
+        case .notDetermined:
+            // Ask for permission
+            let granted = await NotificationService.shared.requestAuthorization()
+            await MainActor.run {
+                if granted {
+                    showNotificationPicker = true
+                } else {
+                    showNotificationPermissionAlert = true
+                }
+            }
+
+        case .denied, .provisional, .ephemeral:
+            // Permission denied, show alert
+            await MainActor.run {
+                showNotificationPermissionAlert = true
+            }
+
+        @unknown default:
+            await MainActor.run {
+                showNotificationPermissionAlert = true
+            }
+        }
+    }
+
+    private func showNotificationError(_ message: String) {
+        notificationErrorMessage = message
+        showNotificationFailureAlert = true
     }
 }
 
@@ -414,43 +574,21 @@ struct DatePickerSheet: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                
-                HStack {
-                    Text("Select Date")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    Spacer()
-
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(Color.appPrimary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .glassEffect(in: Capsule())
-                }
-                .padding(.horizontal)
-                .padding(.top)
 
                 
                 VStack(spacing: 12) {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 24))
-                        .foregroundColor(Color.appPrimary)
+//                    Image(systemName: "calendar")
+//                        .font(.system(size: 24))
+//                        .foregroundColor(Color.appPrimary)
 
                     DatePicker("", selection: $selectedDate, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                         .labelsHidden()
                         .colorScheme(.dark)
                         .accentColor(Color.appPrimary)
-                        .padding()
-                        .glassEffect(in: .rect(cornerRadius: 20))
+//                        .padding()
                 }
-                .padding(.horizontal)
-
-                Spacer()
+//                .padding(.horizontal)
             }
         }
         .presentationBackground {
@@ -464,12 +602,291 @@ struct TimePickerSheet: View {
     @Binding var startTime: Date
     @Binding var endTime: Date
     @Environment(\.dismiss) var dismiss
+    @State private var animateIn = false
 
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.dateFormat = "h:mm"
         return formatter
     }
+
+    private var periodFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "a"
+        return formatter
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let isCompact = geometry.size.height < 600
+            let horizontalPadding: CGFloat = min(geometry.size.width * 0.06, 24)
+            let timeFontSize: CGFloat = isCompact ? 38 : min(geometry.size.width * 0.12, 48)
+            let periodFontSize: CGFloat = isCompact ? 16 : 20
+
+            ZStack {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Header
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Set Time")
+                                    .font(.system(size: isCompact ? 20 : 24, weight: .bold))
+                                    .foregroundColor(.white)
+
+                                Text("Choose start and end times")
+                                    .font(.system(size: isCompact ? 11 : 13))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+
+                            Spacer()
+                        }
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, isCompact ? 16 : 28)
+                        .padding(.bottom, isCompact ? 12 : 20)
+
+                        VStack(spacing: isCompact ? 12 : 20) {
+                            // Start Time Card
+                            TimeCard(
+                                label: "START",
+                                icon: "sunrise.fill",
+                                iconColor: Color.appPrimary,
+                                time: startTime,
+                                timeBinding: $startTime,
+                                timeFormatter: timeFormatter,
+                                periodFormatter: periodFormatter,
+                                timeFontSize: timeFontSize,
+                                periodFontSize: periodFontSize,
+                                isCompact: isCompact,
+                                gradientColors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.05)],
+                                shadowColor: Color.appPrimary.opacity(0.1)
+                            )
+
+                            // Connection Line
+                            if !isCompact {
+                                HStack {
+                                    Spacer()
+
+                                    VStack(spacing: 4) {
+                                        Circle()
+                                            .fill(Color.appPrimary.opacity(0.3))
+                                            .frame(width: 4, height: 4)
+
+                                        Rectangle()
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.1)],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
+                                            )
+                                            .frame(width: 2, height: 20)
+
+                                        Circle()
+                                            .fill(Color.appPrimary.opacity(0.3))
+                                            .frame(width: 4, height: 4)
+                                    }
+
+                                    Spacer()
+                                }
+                            }
+
+                            // End Time Card
+                            TimeCard(
+                                label: "END",
+                                icon: "sunset.fill",
+                                iconColor: Color.orange,
+                                time: endTime,
+                                timeBinding: $endTime,
+                                timeFormatter: timeFormatter,
+                                periodFormatter: periodFormatter,
+                                timeFontSize: timeFontSize,
+                                periodFontSize: periodFontSize,
+                                isCompact: isCompact,
+                                gradientColors: [Color.orange.opacity(0.3), Color.orange.opacity(0.05)],
+                                shadowColor: Color.orange.opacity(0.1)
+                            )
+
+                            // Duration Badge
+                            HStack(spacing: isCompact ? 8 : 10) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.appPrimary.opacity(0.15))
+                                        .frame(width: isCompact ? 36 : 40, height: isCompact ? 36 : 40)
+
+                                    Image(systemName: "timer")
+                                        .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                                        .foregroundColor(Color.appPrimary)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Total Duration")
+                                        .font(.system(size: isCompact ? 10 : 11, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.5))
+
+                                    Text(durationString)
+                                        .font(.system(size: isCompact ? 16 : 18, weight: .bold, design: .rounded))
+                                        .foregroundColor(Color.appPrimary)
+                                }
+
+                                Spacer()
+
+                                // Duration indicator
+                                HStack(spacing: 4) {
+                                    ForEach(0..<max(0, min(Int(endTime.timeIntervalSince(startTime) / 1800), 8)), id: \.self) { _ in
+                                        RoundedRectangle(cornerRadius: 2)
+                                            .fill(Color.appPrimary.opacity(0.6))
+                                            .frame(width: 4, height: isCompact ? 12 : 16)
+                                    }
+                                }
+                            }
+                            .padding(isCompact ? 12 : 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.04))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, 8)
+                        .padding(.bottom, 50)
+                    }
+                    .padding(.bottom, 30)
+                }
+                .scaleEffect(animateIn ? 1 : 0.95)
+                .opacity(animateIn ? 1 : 0)
+                .onAppear {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        animateIn = true
+                    }
+                }
+            }
+        }
+        .presentationBackground {
+            Color.black.opacity(0.85)
+        }
+        .presentationCornerRadius(28)
+    }
+
+    private var durationString: String {
+        let duration = endTime.timeIntervalSince(startTime)
+
+        // Handle negative or zero duration
+        if duration <= 0 {
+            return "0 min"
+        }
+
+        let minutes = Int(duration / 60)
+        let hours = minutes / 60
+        let remainingMinutes = minutes % 60
+
+        if hours > 0 && remainingMinutes > 0 {
+            return "\(hours)h \(remainingMinutes)m"
+        } else if hours > 0 {
+            return "\(hours) hour\(hours == 1 ? "" : "s")"
+        } else {
+            return "\(minutes) min"
+        }
+    }
+}
+
+// Helper component for time cards
+struct TimeCard: View {
+    let label: String
+    let icon: String
+    let iconColor: Color
+    let time: Date
+    @Binding var timeBinding: Date
+    let timeFormatter: DateFormatter
+    let periodFormatter: DateFormatter
+    let timeFontSize: CGFloat
+    let periodFontSize: CGFloat
+    let isCompact: Bool
+    let gradientColors: [Color]
+    let shadowColor: Color
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(label)
+                    .font(.system(size: isCompact ? 10 : 11, weight: .bold))
+                    .foregroundColor(.white.opacity(0.5))
+                    .tracking(1.2)
+
+                Spacer()
+
+                Image(systemName: icon)
+                    .font(.system(size: isCompact ? 12 : 14))
+                    .foregroundColor(iconColor.opacity(0.6))
+            }
+            .padding(.horizontal, isCompact ? 16 : 20)
+            .padding(.top, isCompact ? 12 : 16)
+            .padding(.bottom, isCompact ? 8 : 12)
+
+            HStack(spacing: 12) {
+                // Time Display
+                HStack(spacing: 4) {
+                    Text(timeFormatter.string(from: time))
+                        .font(.system(size: timeFontSize, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+
+                    Text(periodFormatter.string(from: time))
+                        .font(.system(size: periodFontSize, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.6))
+                        .offset(y: timeFontSize * 0.16)
+                }
+
+                Spacer()
+
+                // Picker
+                DatePicker("", selection: $timeBinding, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
+                    .colorScheme(.dark)
+                    .accentColor(iconColor)
+                    .scaleEffect(isCompact ? 1.0 : 1.1)
+            }
+            .padding(.horizontal, isCompact ? 16 : 20)
+            .padding(.bottom, isCompact ? 12 : 20)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: isCompact ? 16 : 20)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: isCompact ? 16 : 20)
+                        .stroke(
+                            LinearGradient(
+                                colors: gradientColors,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
+        .shadow(color: shadowColor, radius: isCompact ? 10 : 20, x: 0, y: isCompact ? 5 : 10)
+    }
+}
+
+struct NotificationPickerSheet: View {
+    @Binding var isEnabled: Bool
+    @Binding var selectedMinutes: [Int]
+    @Environment(\.dismiss) var dismiss
+
+    private let notificationOptions: [(label: String, minutes: Int)] = [
+        ("At time of event", 0),
+        ("5 minutes before", 5),
+        ("15 minutes before", 15),
+        ("30 minutes before", 30),
+        ("1 hour before", 60)
+    ]
 
     var body: some View {
         ZStack {
@@ -477,128 +894,140 @@ struct TimePickerSheet: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                
+                // Header
                 HStack {
-                    Text("Select Time")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Notifications")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Text("Get reminded before your task")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
 
                     Spacer()
 
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(Color.appPrimary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .glassEffect(in: Capsule())
-                }
-                .padding(.horizontal)
-                .padding(.top)
-
-                VStack(spacing: 16) {
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("START TIME")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.6))
-                            .padding(.horizontal, 4)
-
-                        HStack {
-                            Image(systemName: "clock.fill")
-                                .foregroundColor(Color.appPrimary)
-                                .font(.system(size: 18))
-
-                            DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
-                                .datePickerStyle(.compact)
-                                .labelsHidden()
-                                .colorScheme(.dark)
-                                .accentColor(Color.appPrimary)
-
-                            Spacer()
-
-                            Text(timeFormatter.string(from: startTime))
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                        .padding()
-                        .glassEffect(in: .rect(cornerRadius: 12))
-                    }
-
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("END TIME")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.6))
-                            .padding(.horizontal, 4)
-
-                        HStack {
-                            Image(systemName: "clock.badge.checkmark.fill")
-                                .foregroundColor(Color.appPrimary)
-                                .font(.system(size: 18))
-
-                            DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
-                                .datePickerStyle(.compact)
-                                .labelsHidden()
-                                .colorScheme(.dark)
-                                .accentColor(Color.appPrimary)
-
-                            Spacer()
-
-                            Text(timeFormatter.string(from: endTime))
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                        .padding()
-                        .glassEffect(in: .rect(cornerRadius: 12))
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.white.opacity(0.3))
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 24)
+                .padding(.top, 28)
 
-                
-                HStack(spacing: 12) {
-                    Image(systemName: "timer")
-                        .font(.system(size: 16))
-                        .foregroundColor(Color.appPrimary)
+                // Enable/Disable Toggle
+                HStack {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.appPrimary.opacity(0.15))
+                                .frame(width: 40, height: 40)
 
-                    Text("Duration")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
+                            Image(systemName: "bell.badge")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(Color.appPrimary)
+                        }
 
-                    Text(durationString)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color.appPrimary)
+                        Text("Enable Notifications")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                    }
 
                     Spacer()
+
+                    Toggle("", isOn: $isEnabled)
+                        .tint(Color.appPrimary)
                 }
-                .padding()
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
-                .padding(.horizontal)
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 24)
+
+                if isEnabled {
+                    VStack(spacing: 12) {
+                        ForEach(notificationOptions, id: \.minutes) { option in
+                            NotificationOptionRow(
+                                label: option.label,
+                                minutes: option.minutes,
+                                isSelected: selectedMinutes.contains(option.minutes),
+                                onTap: {
+                                    if selectedMinutes.contains(option.minutes) {
+                                        selectedMinutes.removeAll { $0 == option.minutes }
+                                    } else {
+                                        selectedMinutes.append(option.minutes)
+                                        selectedMinutes.sort(by: >)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
 
                 Spacer()
             }
         }
         .presentationBackground {
-            Color.black.opacity(0.8)
+            Color.black.opacity(0.85)
         }
         .presentationCornerRadius(24)
     }
+}
 
-    private var durationString: String {
-        let duration = endTime.timeIntervalSince(startTime)
-        let minutes = Int(duration / 60)
-        let hours = minutes / 60
-        let remainingMinutes = minutes % 60
+struct NotificationOptionRow: View {
+    let label: String
+    let minutes: Int
+    let isSelected: Bool
+    let onTap: () -> Void
 
-        if hours > 0 && remainingMinutes > 0 {
-            return "\(hours)h \(remainingMinutes)min"
-        } else if hours > 0 {
-            return "\(hours) hr"
-        } else {
-            return "\(minutes) min"
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                HStack(spacing: 12) {
+                    Image(systemName: minutes == 0 ? "clock" : "clock.badge.exclamationmark")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(width: 24)
+
+                    Text(label)
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(Color.appPrimary)
+                } else {
+                    Image(systemName: "circle")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white.opacity(0.2))
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.appPrimary.opacity(0.1) : Color.white.opacity(0.03))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(
+                                isSelected ? Color.appPrimary.opacity(0.3) : Color.white.opacity(0.05),
+                                lineWidth: 1
+                            )
+                    )
+            )
         }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

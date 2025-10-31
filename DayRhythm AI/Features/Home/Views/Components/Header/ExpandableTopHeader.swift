@@ -152,7 +152,7 @@ struct ExpandableTopHeader: View {
     
 
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 10)
+        DragGesture(minimumDistance: 5)
             .updating($dragOffset) { value, state, _ in
                 
                 if abs(value.translation.height) > abs(value.translation.width) * 1.5 {

@@ -18,6 +18,7 @@ struct DayEvent: Identifiable {
     let description: String
     let participants: [String]
     let isCompleted: Bool
+    var notificationSettings: NotificationSettings
 
     init(
         id: UUID = UUID(),
@@ -29,7 +30,8 @@ struct DayEvent: Identifiable {
         emoji: String,
         description: String,
         participants: [String],
-        isCompleted: Bool
+        isCompleted: Bool,
+        notificationSettings: NotificationSettings = .disabled
     ) {
         self.id = id
         self.title = title
@@ -41,6 +43,7 @@ struct DayEvent: Identifiable {
         self.description = description
         self.participants = participants
         self.isCompleted = isCompleted
+        self.notificationSettings = notificationSettings
     }
 
     var duration: Double {
