@@ -14,15 +14,30 @@
 		932558772EB28F040037A696 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 932558762EB28F040037A696 /* Realtime */; };
 		932558792EB28F040037A696 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 932558782EB28F040037A696 /* Supabase */; };
 		938481D02EAD33870004282C /* HorizonCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = 938481CF2EAD33870004282C /* HorizonCalendar */; };
+		93EF24D42EB348DB0051A5EE /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 93EF24D32EB348DB0051A5EE /* GoogleSignIn */; };
+		93EF24D62EB348DB0051A5EE /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93EF24D52EB348DB0051A5EE /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		931835BA2EA3AA7B00A96994 /* DayRhythm AI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DayRhythm AI.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		93EF28A82EB361D00051A5EE /* Exceptions for "DayRhythm AI" folder in "DayRhythm AI" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"DayRhythm-AI-Info.plist",
+			);
+			target = 931835B92EA3AA7B00A96994 /* DayRhythm AI */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		931835BC2EA3AA7B00A96994 /* DayRhythm AI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				93EF28A82EB361D00051A5EE /* Exceptions for "DayRhythm AI" folder in "DayRhythm AI" target */,
+			);
 			path = "DayRhythm AI";
 			sourceTree = "<group>";
 		};
@@ -33,7 +48,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93EF24D62EB348DB0051A5EE /* GoogleSignInSwift in Frameworks */,
 				932558792EB28F040037A696 /* Supabase in Frameworks */,
+				93EF24D42EB348DB0051A5EE /* GoogleSignIn in Frameworks */,
 				932558722EB28D110037A696 /* PostgREST in Frameworks */,
 				932558702EB28D110037A696 /* Functions in Frameworks */,
 				9325586E2EB28D110037A696 /* Auth in Frameworks */,
@@ -97,6 +114,8 @@
 				932558732EB28D110037A696 /* Storage */,
 				932558762EB28F040037A696 /* Realtime */,
 				932558782EB28F040037A696 /* Supabase */,
+				93EF24D32EB348DB0051A5EE /* GoogleSignIn */,
+				93EF24D52EB348DB0051A5EE /* GoogleSignInSwift */,
 			);
 			productName = "DayRhythm AI";
 			productReference = 931835BA2EA3AA7B00A96994 /* DayRhythm AI.app */;
@@ -129,6 +148,7 @@
 			packageReferences = (
 				938481CE2EAD33870004282C /* XCRemoteSwiftPackageReference "HorizonCalendar" */,
 				9325586C2EB28D110037A696 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				93EF24D22EB348DB0051A5EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 931835BB2EA3AA7B00A96994 /* Products */;
@@ -292,6 +312,7 @@
 				DEVELOPMENT_TEAM = 3V9DH6TBUG;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "DayRhythm-AI-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -324,6 +345,7 @@
 				DEVELOPMENT_TEAM = 3V9DH6TBUG;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "DayRhythm-AI-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -386,6 +408,14 @@
 				kind = branch;
 			};
 		};
+		93EF24D22EB348DB0051A5EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -423,6 +453,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 938481CE2EAD33870004282C /* XCRemoteSwiftPackageReference "HorizonCalendar" */;
 			productName = HorizonCalendar;
+		};
+		93EF24D32EB348DB0051A5EE /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93EF24D22EB348DB0051A5EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		93EF24D52EB348DB0051A5EE /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93EF24D22EB348DB0051A5EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

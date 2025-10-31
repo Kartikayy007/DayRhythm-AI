@@ -2,7 +2,7 @@
 //  InboxView.swift
 //  DayRhythm AI
 //
-//  Inbox view showing only task cards for the selected day
+//  Created by kartikay on 26/10/25.
 //
 
 import SwiftUI
@@ -13,6 +13,7 @@ struct InboxView: View {
 
     @State private var selectedTask: DayEvent? = nil
     @State private var showCreateTask = false
+    @State private var isHeaderExpanded = false
 
     init(homeViewModel: HomeViewModel) {
         self.homeViewModel = homeViewModel
@@ -24,7 +25,7 @@ struct InboxView: View {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                ExpandableTopHeader(homeViewModel: homeViewModel)
+                ExpandableTopHeader(homeViewModel: homeViewModel, isExpanded: $isHeaderExpanded)
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 5) {
@@ -55,6 +56,23 @@ struct InboxView: View {
                 }
                 .animation(.easeInOut(duration: 0.3), value: viewModel.todayEvents.count)
             }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 30)
+                    .onEnded { value in
+                        // Only collapse header when:
+                        // 1. Header is expanded
+                        // 2. User swipes up (negative translation)
+                        // 3. Vertical gesture (more vertical than horizontal)
+                        let isUpwardSwipe = value.translation.height < -30
+                        let isVerticalGesture = abs(value.translation.height) > abs(value.translation.width) * 1.5
+
+                        if isHeaderExpanded && isUpwardSwipe && isVerticalGesture {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                isHeaderExpanded = false
+                            }
+                        }
+                    }
+            )
         }
         .sheet(item: $selectedTask) { task in
             TaskDetailSheet(

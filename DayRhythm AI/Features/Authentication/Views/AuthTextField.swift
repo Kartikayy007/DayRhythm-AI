@@ -13,6 +13,8 @@ struct AuthTextField: View {
     @Binding var text: String
     var isSecure: Bool = false
 
+    @State private var isPasswordVisible: Bool = false
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -20,7 +22,7 @@ struct AuthTextField: View {
                 .foregroundColor(.white.opacity(0.6))
                 .frame(width: 24)
 
-            if isSecure {
+            if isSecure && !isPasswordVisible {
                 SecureField(placeholder, text: $text)
                     .font(.system(size: 16))
                     .foregroundColor(.white)
@@ -32,7 +34,18 @@ struct AuthTextField: View {
                     .foregroundColor(.white)
                     .autocapitalization(.none)
                     .keyboardType(placeholder.lowercased().contains("email") ? .emailAddress : .default)
-                    .textContentType(placeholder.lowercased().contains("email") ? .emailAddress : .none)
+                    .textContentType(placeholder.lowercased().contains("email") ? .emailAddress : isSecure ? .password : .none)
+            }
+
+            if isSecure {
+                Button(action: {
+                    isPasswordVisible.toggle()
+                }) {
+                    Image(systemName: isPasswordVisible ? "eye" : "eye.slash")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(width: 24, height: 24)
+                }
             }
         }
         .padding(.horizontal, 16)

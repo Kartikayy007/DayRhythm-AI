@@ -16,6 +16,7 @@ final class AuthenticationViewModel: ObservableObject {
     @Published var confirmPassword: String = ""
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
+    @Published var otpSent: Bool = false
 
     private let authService = AuthenticationService.shared
     private let appState = AppState.shared
@@ -101,26 +102,8 @@ final class AuthenticationViewModel: ObservableObject {
         }
     }
 
-    
-    @MainActor
-    func signInWithGoogle(idToken: String) async {
-        errorMessage = nil
-        isLoading = true
 
-        let result = await authService.signInWithGoogle(idToken: idToken)
 
-        isLoading = false
-
-        switch result {
-        case .success(let user):
-            appState.setAuthenticated(user: user)
-            clearFields()
-        case .failure(let error):
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    
     @MainActor
     func signOut() async {
         isLoading = true
@@ -152,10 +135,65 @@ final class AuthenticationViewModel: ObservableObject {
         errorMessage = nil
     }
 
-    
+
     func isValidEmail() -> Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
         return emailPredicate.evaluate(with: email)
     }
+
+    @MainActor
+    func sendOTP() async {
+        errorMessage = nil
+
+        guard !email.isEmpty else {
+            errorMessage = "Please enter your email"
+            return
+        }
+
+        guard isValidEmail() else {
+            errorMessage = "Please enter a valid email address"
+            return
+        }
+
+        isLoading = true
+
+        let result = await authService.sendOTP(email: email)
+
+        isLoading = false
+
+        switch result {
+        case .success:
+            otpSent = true
+        case .failure(let error):
+            errorMessage = error.localizedDescription
+            otpSent = false
+        }
+    }
+
+    @MainActor
+    func verifyOTP(code: String) async {
+        errorMessage = nil
+
+        guard code.count == 6 else {
+            errorMessage = "Please enter the 6-digit code"
+            return
+        }
+
+        isLoading = true
+
+        let result = await authService.verifyOTP(email: email, code: code)
+
+        isLoading = false
+
+        switch result {
+        case .success(let user):
+            appState.setAuthenticated(user: user)
+            clearFields()
+            otpSent = false
+        case .failure(let error):
+            errorMessage = error.localizedDescription
+        }
+    }
+
 }

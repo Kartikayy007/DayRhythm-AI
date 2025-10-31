@@ -12,14 +12,15 @@ struct HomeView: View {
     @State private var showCreateTask = false
     @State private var selectedTask: DayEvent? = nil
     @State private var isArcDragging = false
+    @State private var isHeaderExpanded = false
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Color.black.edgesIgnoringSafeArea(.all)
             
             VStack(spacing: 0) {
-                ExpandableTopHeader(homeViewModel: viewModel)
-                
+                ExpandableTopHeader(homeViewModel: viewModel, isExpanded: $isHeaderExpanded)
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 20) {
                         CircularDayDial(
@@ -82,7 +83,23 @@ struct HomeView: View {
                 }
                 .scrollDisabled(isArcDragging)
             }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 30)
+                    .onEnded { value in
+                        
+                        
+                        
+                        
+                        let isUpwardSwipe = value.translation.height < -30
+                        let isVerticalGesture = abs(value.translation.height) > abs(value.translation.width) * 1.5
 
+                        if isHeaderExpanded && isUpwardSwipe && isVerticalGesture {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                isHeaderExpanded = false
+                            }
+                        }
+                    }
+            )
 
         }
         .sheet(item: $selectedTask) { task in

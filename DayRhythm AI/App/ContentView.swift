@@ -11,17 +11,9 @@ struct ContentView: View {
     @EnvironmentObject var appState: AppState
 
     var body: some View {
-        Group {
-            if appState.isAuthenticated {
-                
-                MainTabView()
-                    .fontDesign(.rounded)
-                    .hideKeyboardOnTap()
-            } else {
-                
-                AuthenticationGateView()
-            }
-        }
+        MainTabView()
+            .fontDesign(.rounded)
+            .hideKeyboardOnTap()
     }
 }
 
@@ -29,4 +21,3 @@ struct ContentView: View {
     ContentView()
         .environmentObject(AppState.shared)
 }
- 

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ExpandableTopHeader: View {
     @StateObject private var viewModel: TopHeaderViewModel
+    @Binding var isExpanded: Bool
     @State private var headerState: HeaderState = .collapsed
     @State private var headerHeight: CGFloat = 140
     @GestureState private var dragOffset: CGFloat = 0
@@ -17,8 +18,9 @@ struct ExpandableTopHeader: View {
     private let collapsedHeight: CGFloat = 150
     private let expandedHeightRatio: CGFloat = 0.515
 
-    init(homeViewModel: HomeViewModel) {
+    init(homeViewModel: HomeViewModel, isExpanded: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: TopHeaderViewModel(homeViewModel: homeViewModel))
+        _isExpanded = isExpanded
     } 
 
     private var expandedHeight: CGFloat {
@@ -50,31 +52,41 @@ struct ExpandableTopHeader: View {
             )
 
             VStack(spacing: 0) {
-                
+
                 headerBar
                     .padding(.top, 10)
                     .padding(.bottom, 10)
+                    .gesture(dragGesture)
 
-                
+
                 calendarContent
                     .frame(maxHeight: .infinity)
             }
             .frame(height: currentHeight)
 
-            
+
             VStack {
                 Spacer()
                 dragIndicator
                     .padding(.bottom, 8)
+                    .gesture(dragGesture)
             }
             .frame(height: currentHeight)
         }
         .frame(height: currentHeight)
-        .gesture(dragGesture)
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: headerState)
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: currentHeight)
         .sheet(isPresented: $viewModel.showMonthPicker) {
             monthPickerSheet
+        }
+        .onChange(of: isExpanded) { newValue in
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                headerState = newValue ? .expanded : .collapsed
+                headerHeight = newValue ? expandedHeight : collapsedHeight
+            }
+        }
+        .onChange(of: headerState) { newState in
+            isExpanded = (newState == .expanded)
         }
     }
 
@@ -104,6 +116,7 @@ struct ExpandableTopHeader: View {
                 SimpleWeekView(viewModel: viewModel)
                     .opacity(1 - expansionProgress)
                     .frame(height: 80)
+                    .simultaneousGesture(dragGesture)
             }
 
             
@@ -243,13 +256,21 @@ private extension TopHeaderViewModel {
 }
 
 #Preview {
-    ZStack {
-        Color.black
-            .ignoresSafeArea()
+    struct PreviewWrapper: View {
+        @State private var isExpanded = false
 
-        VStack {
-            ExpandableTopHeader(homeViewModel: HomeViewModel())
-            Spacer()
+        var body: some View {
+            ZStack {
+                Color.black
+                    .ignoresSafeArea()
+
+                VStack {
+                    ExpandableTopHeader(homeViewModel: HomeViewModel(), isExpanded: $isExpanded)
+                    Spacer()
+                }
+            }
         }
     }
+
+    return PreviewWrapper()
 }

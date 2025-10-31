@@ -19,149 +19,195 @@ struct SettingsView: View {
         ZStack {
             Color.black.edgesIgnoringSafeArea(.all)
 
-            VStack(spacing: 20) {
-                
-                Text("Settings")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Profile")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+
+                        if !appState.isAuthenticated {
+                            Text("Log in and start planning your next trip.")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.bottom, 8)
+                        }
+                    }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                    .padding(.top, 20)
+                    .padding(.horizontal, 20)
 
-                
-                ScrollView {
-                    VStack(spacing: 20) {
-                        
-                        VStack(spacing: 12) {
-                            if appState.isAuthenticated, let user = appState.currentUser {
-                                
-                                VStack(spacing: 12) {
-                                    
-                                    HStack(spacing: 16) {
-                                        
-                                        Circle()
-                                            .fill(Color.appPrimary.opacity(0.3))
-                                            .frame(width: 56, height: 56)
-                                            .overlay(
-                                                Text(String(user.email.prefix(1)).uppercased())
-                                                    .font(.system(size: 24, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            )
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(user.displayName ?? "User")
-                                                .font(.system(size: 18, weight: .semibold))
-                                                .foregroundColor(.white)
-
-                                            Text(user.email)
-                                                .font(.system(size: 14))
-                                                .foregroundColor(.white.opacity(0.6))
-                                        }
-
-                                        Spacer()
-                                    }
-                                    .padding(16)
-                                    .background(Color.white.opacity(0.05))
-                                    .cornerRadius(12)
-
-                                    
-                                    Button(action: {
-                                        showSignOutAlert = true
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                                                .font(.system(size: 18))
-                                            Text("Sign Out")
-                                                .font(.system(size: 16, weight: .medium))
-                                        }
-                                        .foregroundColor(.red)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(Color.red.opacity(0.1))
-                                        .cornerRadius(10)
-                                    }
-                                }
-                            } else {
-                                
-                                VStack(spacing: 12) {
-                                    Text("Sign in to sync your schedule")
-                                        .font(.system(size: 15))
-                                        .foregroundColor(.white.opacity(0.7))
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.bottom, 4)
-
-                                    
-                                    Button(action: {
-                                        showLoginSheet = true
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "person.circle.fill")
-                                                .font(.system(size: 18))
-                                            Text("Login")
-                                                .font(.system(size: 16, weight: .semibold))
-                                        }
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(Color.appPrimary)
-                                        .cornerRadius(10)
-                                    }
-
-                                    
-                                    Button(action: {
-                                        showSignupSheet = true
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "person.badge.plus")
-                                                .font(.system(size: 18))
-                                            Text("Sign Up")
-                                                .font(.system(size: 16, weight: .semibold))
-                                        }
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(Color.white.opacity(0.1))
-                                        .cornerRadius(10)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    if appState.isAuthenticated, let user = appState.currentUser {
+                        VStack(spacing: 16) {
+                            HStack(spacing: 16) {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color(hex: "FF6B35") ?? .orange, Color(hex: "FF8C42") ?? .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
                                         )
-                                    }
+                                    )
+                                    .frame(width: 72, height: 72)
+                                    .overlay(
+                                        Text(String(user.email.prefix(1)).uppercased())
+                                            .font(.system(size: 32, weight: .bold))
+                                            .foregroundColor(.white)
+                                    )
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(user.displayName ?? "User")
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.white)
+
+                                    Text(user.email)
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+
+                                Spacer()
+
+                                Button(action: {}) {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white.opacity(0.6))
                                 }
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 20)
                         }
-                        .padding(.horizontal)
+                    } else {
+                        Button(action: {
+                            showLoginSheet = true
+                        }) {
+                            HStack {
+                                Text("Log in or sign up")
+                                    .font(.system(size: 17, weight: .semibold))
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(Color.white.opacity(0.08))
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                    }
 
-                        
+                    Rectangle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 1)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 24)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Settings")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 12)
+
+                        SettingsRowButton(icon: "bell", title: "Notifications")
+                        SettingsRowButton(icon: "moon", title: "Dark Mode")
+                        SettingsRowButton(icon: "globe", title: "Language")
+                        SettingsRowButton(icon: "calendar", title: "First Day of Week")
+                        SettingsRowButton(icon: "clock", title: "Time Format")
+                    }
+
+                    Rectangle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 1)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 24)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        if appState.isAuthenticated {
+                            Text("Account")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 12)
+
+                            SettingsRowButton(icon: "person.circle", title: "Personal information")
+                            SettingsRowButton(icon: "lock", title: "Login & security")
+                            SettingsRowButton(icon: "creditcard", title: "Payments & payouts")
+                        }
+                    }
+
+                    if appState.isAuthenticated {
                         Rectangle()
                             .fill(Color.white.opacity(0.1))
                             .frame(height: 1)
-                            .padding(.horizontal)
-                            .padding(.vertical, 4)
-
-                        
-                        VStack(spacing: 15) {
-                            SettingsRow(icon: "bell", title: "Notifications", value: "On")
-                            SettingsRow(icon: "moon", title: "Dark Mode", value: "Auto")
-                            SettingsRow(icon: "globe", title: "Language", value: "English")
-                            SettingsRow(icon: "calendar", title: "First Day of Week", value: "Monday")
-                            SettingsRow(icon: "clock", title: "Time Format", value: "24h")
-                        }
-                        .padding(.horizontal)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 24)
                     }
-                    .padding(.top, 10)
-                }
 
-                Spacer()
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Support")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 12)
+
+                        SettingsRowButton(icon: "questionmark.circle", title: "Get help")
+                        SettingsRowButton(icon: "exclamationmark.bubble", title: "Give us feedback")
+                    }
+
+                    Rectangle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 1)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 24)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Legal")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 12)
+
+                        SettingsRowButton(icon: "doc.text", title: "Terms of Service")
+                        SettingsRowButton(icon: "hand.raised", title: "Privacy Policy")
+                        SettingsRowButton(icon: "shield", title: "Open source licenses")
+                    }
+
+                    if appState.isAuthenticated {
+                        Button(action: {
+                            showSignOutAlert = true
+                        }) {
+                            HStack {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .font(.system(size: 18))
+                                Text("Sign Out")
+                                    .font(.system(size: 17, weight: .semibold))
+                            }
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 24)
+                    }
+
+                    Text("Version 1.0.0 (Build 1)")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.4))
+                        .padding(.top, 32)
+                        .padding(.bottom, 40)
+                }
             }
         }
         .sheet(isPresented: $showLoginSheet) {
-            LoginSheet()
+            DarkLoginSheet()
                 .environmentObject(appState)
         }
         .sheet(isPresented: $showSignupSheet) {
-            SignupSheet()
+            DarkSignupSheet()
                 .environmentObject(appState)
         }
         .alert("Sign Out", isPresented: $showSignOutAlert) {
@@ -177,36 +223,37 @@ struct SettingsView: View {
     }
 }
 
-
-struct SettingsRow: View {
+struct SettingsRowButton: View {
     let icon: String
     let title: String
-    let value: String
 
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(.white.opacity(0.7))
-                .frame(width: 30)
+        Button(action: {}) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(width: 24)
 
-            Text(title)
-                .font(.system(size: 16))
-                .foregroundColor(.white)
+                Text(title)
+                    .font(.system(size: 17))
+                    .foregroundColor(.white)
 
-            Spacer()
+                Spacer()
 
-            Text(value)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.6))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.3))
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 20)
+            .background(Color.clear)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(10)
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
 #Preview {
     SettingsView()
+        .environmentObject(AppState.shared)
 }

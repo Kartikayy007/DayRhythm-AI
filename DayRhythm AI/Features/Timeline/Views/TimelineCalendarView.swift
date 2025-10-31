@@ -128,7 +128,7 @@ private struct TimelineTaskRow: View {
             ZStack {
                 
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(event.color.opacity(isPastEvent ? 0.25 : 0.6))
+                    .fill(event.color.opacity(isPastEvent ? 0.1 : 0.7))
 
                 
                 HStack(spacing: 12) {
@@ -140,14 +140,15 @@ private struct TimelineTaskRow: View {
 
                             Text(event.title)
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.black.opacity(isPastEvent ? 0.4 : 1.0))
+                                .foregroundColor(.white.opacity(isPastEvent ? 0.7 : 1.0))
+                                .strikethrough(isPastEvent, color: .white.opacity(0.9))
                                 .lineLimit(1)
                         }
 
                         
                         Text(event.durationString)
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.black.opacity(isPastEvent ? 0.3 : 0.6))
+                            .foregroundColor(.white.opacity(isPastEvent ? 0.3 : 0.6))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 

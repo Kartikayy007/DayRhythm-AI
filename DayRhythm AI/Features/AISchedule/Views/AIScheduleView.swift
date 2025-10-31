@@ -60,6 +60,7 @@ struct TypewriterText: View {
 struct AIScheduleView: View {
     @StateObject private var aiViewModel = AIScheduleViewModel()
     @ObservedObject var homeViewModel: HomeViewModel
+    @EnvironmentObject var appState: AppState
     @FocusState private var isTextEditorFocused: Bool
     @State private var currentGreetingIndex = Int.random(in: 0..<10)
 
@@ -138,7 +139,20 @@ struct AIScheduleView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            if !appState.isAuthenticated {
+                AuthenticationPromptView(
+                    title: "Sign in to use AI features",
+                    message: "Create an account or log in to unlock AI-powered task planning and intelligent scheduling",
+                    icon: "sparkles"
+                )
+            } else {
+                mainContent
+            }
+        }
+    }
+
+    private var mainContent: some View {
+        VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(greeting)
                         .font(.system(size: 32, weight: .bold))
@@ -242,7 +256,6 @@ struct AIScheduleView: View {
                                     text: "Meeting at 3pm",
                                     action: {
                                         aiViewModel.userInput = "Team meeting tomorrow at 3pm for 1 hour"
-                                        aiViewModel.parseTask()
                                     }
                                 )
 
@@ -250,7 +263,6 @@ struct AIScheduleView: View {
                                     text: "Morning coding session",
                                     action: {
                                         aiViewModel.userInput = "Schedule 2 hours coding in the morning"
-                                        aiViewModel.parseTask()
                                     }
                                 )
 
@@ -258,7 +270,6 @@ struct AIScheduleView: View {
                                     text: "Lunch at 12:30",
                                     action: {
                                         aiViewModel.userInput = "Add lunch break at 12:30pm"
-                                        aiViewModel.parseTask()
                                     }
                                 )
 
@@ -266,7 +277,6 @@ struct AIScheduleView: View {
                                     text: "Gym at 6pm",
                                     action: {
                                         aiViewModel.userInput = "Gym session at 6pm for 45 minutes"
-                                        aiViewModel.parseTask()
                                     }
                                 )
 
@@ -274,7 +284,6 @@ struct AIScheduleView: View {
                                     text: "Review emails",
                                     action: {
                                         aiViewModel.userInput = "Review and respond to emails for 30 minutes"
-                                        aiViewModel.parseTask()
                                     }
                                 )
 
@@ -282,7 +291,6 @@ struct AIScheduleView: View {
                                     text: "Weekly planning",
                                     action: {
                                         aiViewModel.userInput = "Weekly planning session for 1 hour"
-                                        aiViewModel.parseTask()
                                     }
                                 )
 
@@ -290,7 +298,6 @@ struct AIScheduleView: View {
                                     text: "Coffee break",
                                     action: {
                                         aiViewModel.userInput = "Coffee break at 3:30pm for 15 minutes"
-                                        aiViewModel.parseTask()
                                     }
                                 )
 
@@ -298,7 +305,6 @@ struct AIScheduleView: View {
                                     text: "Project review",
                                     action: {
                                         aiViewModel.userInput = "Project review meeting at 4pm"
-                                        aiViewModel.parseTask()
                                     }
                                 )
                             }
@@ -307,100 +313,66 @@ struct AIScheduleView: View {
                         .frame(height: 44)
                     }
 
-                    
-                    HStack(spacing: 16) {
+
+                    HStack(spacing: 12) {
+                        TextField("Ask anything", text: $aiViewModel.userInput)
+                            .font(.system(size: 17, weight: .regular))
+                            .foregroundColor(.white)
+                            .focused($isTextEditorFocused)
+                            .submitLabel(.send)
+                            .onSubmit {
+                                if !aiViewModel.userInput.isEmpty {
+                                    isTextEditorFocused = false
+                                    aiViewModel.parseTask()
+                                }
+                            }
+
+                        Spacer()
+
                         
                         Button(action: {
                             
                         }) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 22, weight: .medium))
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(.white.opacity(0.6))
-                                .frame(width: 44, height: 44)
-                                .background(
-                                    Circle()
-                                        .fill(Color.white.opacity(0.08))
-                                )
                         }
 
                         
-                        HStack(spacing: 12) {
-                            TextField("Ask anything", text: $aiViewModel.userInput)
-                                .font(.system(size: 17, weight: .regular))
-                                .foregroundColor(.white)
-                                .focused($isTextEditorFocused)
-                                .submitLabel(.send)
-                                .onSubmit {
-                                    if !aiViewModel.userInput.isEmpty {
-                                        isTextEditorFocused = false
-                                        aiViewModel.parseTask()
-                                    }
-                                }
-
-                            
-                            Button(action: {
-                                
-                            }) {
-                                Image(systemName: "mic.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
-
-                            
+                        Button(action: {
                             if !aiViewModel.userInput.isEmpty {
-                                Button(action: {
-                                    isTextEditorFocused = false
-                                    aiViewModel.parseTask()
-                                }) {
-                                    if aiViewModel.isLoading {
-                                        ProgressView()
-                                            .tint(Color.white)
-                                            .scaleEffect(0.8)
-                                    } else {
-                                        Image(systemName: "waveform")
-                                            .font(.system(size: 18))
-                                            .foregroundColor(Color(red: 1.0, green: 0.0, blue: 0.6)) 
-                                    }
-                                }
-                                .disabled(aiViewModel.isLoading)
+                                isTextEditorFocused = false
+                                aiViewModel.parseTask()
+                            }
+                        }) {
+                            if aiViewModel.isLoading {
+                                ProgressView()
+                                    .tint(Color.white)
+                                    .scaleEffect(0.8)
                             } else {
-                                
-                                Button(action: {
-                                    
-                                }) {
-                                    Image(systemName: "waveform")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(Color(red: 1.0, green: 0.0, blue: 0.6)) 
-                                }
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .font(.system(size: 28, weight: .regular))
+                                    .foregroundColor(aiViewModel.userInput.isEmpty ? .white.opacity(0.3) : Color.appPrimary)
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 24)
-                                .fill(Color.white.opacity(0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 24)
-                                        .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
-                                )
-                        )
+                        .disabled(aiViewModel.isLoading || aiViewModel.userInput.isEmpty)
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color.white.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                            )
+                    )
                     .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 20)
             }
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    isTextEditorFocused = false
-                }
-                .foregroundColor(.white)
-            }
-        }
     }
-}
 
 struct TaskPreviewCard: View {
     let task: ParsedTaskUI

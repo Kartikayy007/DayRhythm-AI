@@ -46,11 +46,11 @@ final class AuthenticationService {
         )
     }
 
-    // MARK: - Email/Password Authentication
+    
 
-    /// Sign up a new user with email and password
+    
     func signUp(email: String, password: String) async -> Result<User, AuthError> {
-        // Validate inputs
+        
         guard isValidEmail(email) else {
             return .failure(.invalidEmail)
         }
@@ -79,9 +79,9 @@ final class AuthenticationService {
         }
     }
 
-    /// Sign in an existing user with email and password
+    
     func signIn(email: String, password: String) async -> Result<User, AuthError> {
-        // Validate inputs
+        
         guard isValidEmail(email) else {
             return .failure(.invalidEmail)
         }
@@ -134,20 +134,42 @@ final class AuthenticationService {
         }
     }
 
-    func signInWithGoogle(idToken: String) async -> Result<User, AuthError> {
+    func sendOTP(email: String) async -> Result<Void, AuthError> {
+        guard isValidEmail(email) else {
+            return .failure(.invalidEmail)
+        }
+
         do {
-            let response = try await supabase.auth.signInWithIdToken(
-                credentials: .init(
-                    provider: .google,
-                    idToken: idToken
-                )
+            try await supabase.auth.signInWithOTP(
+                email: email
+            )
+            return .success(())
+        } catch {
+            return .failure(parseSupabaseError(error))
+        }
+    }
+
+    func verifyOTP(email: String, code: String) async -> Result<User, AuthError> {
+        guard isValidEmail(email) else {
+            return .failure(.invalidEmail)
+        }
+
+        guard code.count == 6 else {
+            return .failure(.unknownError("Invalid verification code"))
+        }
+
+        do {
+            let response = try await supabase.auth.verifyOTP(
+                email: email,
+                token: code,
+                type: .email
             )
 
             let supabaseUser = response.user
 
             let user = User(
                 id: supabaseUser.id.uuidString,
-                email: supabaseUser.email ?? "",
+                email: supabaseUser.email ?? email,
                 createdAt: supabaseUser.createdAt
             )
 
@@ -178,6 +200,45 @@ final class AuthenticationService {
             email: supabaseUser.email ?? "",
             createdAt: supabaseUser.createdAt
         )
+    }
+
+    func startAuthStateListener(onChange: @escaping (User?) async -> Void) async {
+        for await state in supabase.auth.authStateChanges {
+            switch state.event {
+            case .signedIn, .tokenRefreshed, .userUpdated:
+                if let session = state.session {
+                    let user = User(
+                        id: session.user.id.uuidString,
+                        email: session.user.email ?? "",
+                        createdAt: session.user.createdAt
+                    )
+                    await onChange(user)
+                }
+            case .signedOut:
+                await onChange(nil)
+            default:
+                break
+            }
+        }
+    }
+
+    func setSessionWithTokens(accessToken: String, refreshToken: String) async -> Result<User, AuthError> {
+        do {
+            let session = try await supabase.auth.setSession(
+                accessToken: accessToken,
+                refreshToken: refreshToken
+            )
+
+            let user = User(
+                id: session.user.id.uuidString,
+                email: session.user.email ?? "",
+                createdAt: session.user.createdAt
+            )
+
+            return .success(user)
+        } catch {
+            return .failure(parseSupabaseError(error))
+        }
     }
 
     private func isValidEmail(_ email: String) -> Bool {

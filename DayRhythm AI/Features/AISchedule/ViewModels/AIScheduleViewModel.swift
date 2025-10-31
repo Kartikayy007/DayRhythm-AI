@@ -14,6 +14,7 @@ class AIScheduleViewModel: ObservableObject {
     @Published var parsedTasks: [ParsedTaskUI] = []
     @Published var errorMessage: String?
 
+    private let backendService = BackendService.shared
     private let groqService = GroqService.shared
 
     func parseTask() {
@@ -22,35 +23,62 @@ class AIScheduleViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
+        let currentPrompt = userInput
+
         Task {
-            let results = await groqService.parseTaskFromDescription(userInput)
+            do {
+                
+                let results = try await backendService.parseSchedule(prompt: currentPrompt)
 
-            await MainActor.run {
-                isLoading = false
+                await MainActor.run {
+                    isLoading = false
 
-                if !results.isEmpty {
+                    if !results.isEmpty {
+                        for parsedTask in results {
+                            let duration = parsedTask.endTime - parsedTask.startTime
+                            let uiTask = ParsedTaskUI(
+                                id: UUID(),
+                                title: parsedTask.title,
+                                description: parsedTask.description,
+                                startTime: parsedTask.startTime,
+                                endTime: parsedTask.endTime,
+                                duration: duration,
+                                date: parsedTask.date,
+                                emoji: parsedTask.emoji,
+                                colorHex: parsedTask.colorHex
+                            )
+                            parsedTasks.append(uiTask)
+                        }
+
+                        print("✅ Added \(results.count) tasks from backend")
+                        userInput = ""
+                    } else {
+                        print("⚠️ Backend returned empty array")
+                        errorMessage = "Failed to parse task. Please try again."
+                    }
+                }
+            } catch let error as BackendError {
+                await MainActor.run {
+                    isLoading = false
+                    print("❌ Backend error: \(error.localizedDescription)")
+
                     
-                    for parsedTask in results {
-                        let duration = parsedTask.endTime - parsedTask.startTime
-                        let uiTask = ParsedTaskUI(
-                            id: UUID(),
-                            title: parsedTask.title,
-                            description: parsedTask.description,
-                            startTime: parsedTask.startTime,
-                            endTime: parsedTask.endTime,
-                            duration: duration,
-                            date: parsedTask.date,
-                            emoji: parsedTask.emoji,
-                            colorHex: parsedTask.colorHex
-                        )
-                        parsedTasks.append(uiTask)
+                    switch error {
+                    case .unauthorized:
+                        errorMessage = "Please sign in to use AI features"
+                    case .networkError:
+                        errorMessage = "Network error. Check your connection."
+                    default:
+                        errorMessage = error.localizedDescription
                     }
 
-                    print("Added \(results.count) tasks to preview")
-                    userInput = ""
-                } else {
-                    print("ViewModel: Task parsing returned empty array")
-                    errorMessage = "Failed to parse task. Please check console for details and try again."
+                    
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    print("❌ Unexpected error: \(error)")
+                    errorMessage = "Something went wrong. Please try again."
                 }
             }
         }

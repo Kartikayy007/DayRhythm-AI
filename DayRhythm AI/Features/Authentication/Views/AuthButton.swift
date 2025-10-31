@@ -10,7 +10,6 @@ import SwiftUI
 enum AuthButtonStyle {
     case primary
     case apple
-    case google
 }
 
 struct AuthButton: View {
@@ -74,8 +73,6 @@ struct AuthButton: View {
             return Color.appPrimary
         case .apple:
             return Color.white
-        case .google:
-            return Color.white.opacity(0.05)
         }
     }
 
@@ -85,8 +82,6 @@ struct AuthButton: View {
             return .white
         case .apple:
             return .black
-        case .google:
-            return .white
         }
     }
 
@@ -96,8 +91,6 @@ struct AuthButton: View {
             return Color.clear
         case .apple:
             return Color.clear
-        case .google:
-            return Color.white.opacity(0.2)
         }
     }
 }
@@ -118,14 +111,6 @@ struct AuthButton: View {
                 title: "Continue with Apple",
                 icon: "apple.logo",
                 style: .apple,
-                isLoading: false,
-                action: {}
-            )
-
-            AuthButton(
-                title: "Continue with Google",
-                icon: "globe",
-                style: .google,
                 isLoading: false,
                 action: {}
             )

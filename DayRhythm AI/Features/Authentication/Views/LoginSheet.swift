@@ -124,16 +124,6 @@ struct LoginSheet: View {
                                 }
                             )
 
-                            AuthButton(
-                                title: "Continue with Google",
-                                icon: "globe",
-                                style: .google,
-                                isLoading: false,
-                                action: {
-                                    
-                                    viewModel.errorMessage = "Google Sign In coming soon"
-                                }
-                            )
                         }
 
                         

@@ -11,6 +11,7 @@ struct TaskDetailSheet: View {
     let task: DayEvent
     let allEvents: [DayEvent]
     @ObservedObject var viewModel: HomeViewModel
+    @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
 
     @State private var showDeleteConfirm = false
@@ -18,6 +19,8 @@ struct TaskDetailSheet: View {
     @State private var shouldRefreshTask = false
     @State private var taskInsight: String = ""
     @State private var isLoadingInsight = false
+    @State private var showLoginSheet = false
+    @State private var showSignupSheet = false
 
     var refreshedTask: DayEvent {
         return viewModel.events.first(where: { $0.id == task.id }) ?? task
@@ -81,13 +84,49 @@ struct TaskDetailSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 20)
 
-                        
-                        AIInsightView(
-                            insight: taskInsight,
-                            isLoading: isLoadingInsight
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
+
+                        if appState.isAuthenticated {
+                            AIInsightView(
+                                insight: taskInsight,
+                                isLoading: isLoadingInsight
+                            )
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                        } else {
+                            VStack(spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 14))
+                                    Text("Sign in to see AI insights for this task")
+                                        .font(.system(size: 14))
+                                }
+                                .foregroundColor(.white.opacity(0.6))
+
+                                Button(action: {
+                                    showLoginSheet = true
+                                }) {
+                                    Text("Sign In")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 10)
+                                        .background(
+                                            LinearGradient(
+                                                colors: [Color(hex: "FF6B35") ?? .orange, Color(hex: "FF8C42") ?? .orange],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .cornerRadius(8)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(12)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                        }
 
                         Button(action: {
                             showDeleteConfirm = true
@@ -134,12 +173,47 @@ struct TaskDetailSheet: View {
         .onChange(of: shouldRefreshTask) { _ in
         }
         .onAppear {
+            guard appState.isAuthenticated else {
+                return
+            }
             Task {
                 isLoadingInsight = true
-                let insight = await GroqService.shared.generateTaskInsight(for: task)
-                taskInsight = insight
-                isLoadingInsight = false
+
+                do {
+                    // Use backend service (secure, with auth)
+                    let insight = try await BackendService.shared.getTaskInsight(task: task)
+                    await MainActor.run {
+                        taskInsight = insight
+                        isLoadingInsight = false
+                    }
+                    print("✅ Received task insight from backend")
+                } catch let error as BackendError {
+                    print("❌ Backend error: \(error.localizedDescription)")
+
+                    // Fallback to direct Groq service
+                    let fallbackInsight = await GroqService.shared.generateTaskInsight(for: task)
+                    await MainActor.run {
+                        taskInsight = fallbackInsight
+                        isLoadingInsight = false
+                    }
+                    print("⚠️ Used fallback Groq service")
+                } catch {
+                    print("❌ Unexpected error: \(error)")
+
+                    // Fallback to direct Groq service
+                    let fallbackInsight = await GroqService.shared.generateTaskInsight(for: task)
+                    await MainActor.run {
+                        taskInsight = fallbackInsight
+                        isLoadingInsight = false
+                    }
+                }
             }
+        }
+        .sheet(isPresented: $showLoginSheet) {
+            DarkLoginSheet()
+        }
+        .sheet(isPresented: $showSignupSheet) {
+            DarkSignupSheet()
         }
     }
 }

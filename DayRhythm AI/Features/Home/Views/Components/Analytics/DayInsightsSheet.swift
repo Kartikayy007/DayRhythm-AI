@@ -9,11 +9,14 @@ import SwiftUI
 
 struct DayInsightsSheet: View {
     @ObservedObject var homeViewModel: HomeViewModel
+    @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var insights: [String] = []
     @State private var isLoadingInsights = false
     @State private var pieChartData: [PieChartView.ChartData] = []
     @State private var timelineData: [TimelineBarChart.HourData] = []
+    @State private var showLoginSheet = false
+    @State private var showSignupSheet = false
 
     var body: some View {
         ZStack {
@@ -126,10 +129,16 @@ struct DayInsightsSheet: View {
                         .padding(.horizontal, 20)
 
                         if insights.isEmpty && !isLoadingInsights {
-                            Button(action: generateInsights) {
+                            Button(action: {
+                                if appState.isAuthenticated {
+                                    generateInsights()
+                                } else {
+                                    showLoginSheet = true
+                                }
+                            }) {
                                 HStack {
-                                    Image(systemName: "sparkles")
-                                    Text("Generate AI Insights")
+                                    Image(systemName: appState.isAuthenticated ? "sparkles" : "lock.fill")
+                                    Text(appState.isAuthenticated ? "Generate AI Insights" : "Sign in to Generate Insights")
                                 }
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.black)
@@ -161,6 +170,12 @@ struct DayInsightsSheet: View {
         }
         .onAppear {
             calculateChartData()
+        }
+        .sheet(isPresented: $showLoginSheet) {
+            DarkLoginSheet()
+        }
+        .sheet(isPresented: $showSignupSheet) {
+            DarkSignupSheet()
         }
     }
 
@@ -221,14 +236,50 @@ struct DayInsightsSheet: View {
         isLoadingInsights = true
 
         Task {
-            let generatedInsights = await GroqService.shared.generateDayInsights(
-                events: homeViewModel.events,
-                date: homeViewModel.selectedDate
-            )
+            do {
+                
+                let generatedInsights = try await BackendService.shared.getDayInsights(
+                    date: homeViewModel.selectedDate
+                )
 
-            await MainActor.run {
-                insights = generatedInsights
-                isLoadingInsights = false
+                await MainActor.run {
+                    insights = generatedInsights
+                    isLoadingInsights = false
+                }
+                print("✅ Received \(generatedInsights.count) insights from backend")
+            } catch let error as BackendError {
+                await MainActor.run {
+                    isLoadingInsights = false
+                    print("❌ Backend error: \(error.localizedDescription)")
+
+                    
+                    Task {
+                        let fallbackInsights = await GroqService.shared.generateDayInsights(
+                            events: homeViewModel.events,
+                            date: homeViewModel.selectedDate
+                        )
+                        await MainActor.run {
+                            insights = fallbackInsights
+                        }
+                        print("⚠️ Used fallback Groq service")
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoadingInsights = false
+                    print("❌ Unexpected error: \(error)")
+
+                    
+                    Task {
+                        let fallbackInsights = await GroqService.shared.generateDayInsights(
+                            events: homeViewModel.events,
+                            date: homeViewModel.selectedDate
+                        )
+                        await MainActor.run {
+                            insights = fallbackInsights
+                        }
+                    }
+                }
             }
         }
     }
