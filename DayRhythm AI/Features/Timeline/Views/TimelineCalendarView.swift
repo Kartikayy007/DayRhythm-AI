@@ -81,7 +81,31 @@ private struct TimelineTaskRow: View {
     let showTickMark: Bool
 
     private var isPastEvent: Bool {
-        return event.endHour < currentTimeInHours
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let eventDate = formatter.date(from: event.dateString) else {
+            
+            return event.endHour < currentTimeInHours
+        }
+
+        let eventDay = calendar.startOfDay(for: eventDate)
+
+        
+        if eventDay < today {
+            return true
+        }
+
+        
+        if eventDay == today && event.endHour < currentTimeInHours {
+            return true
+        }
+
+        
+        return false
     }
 
     private func timeString(for time: Double) -> String {

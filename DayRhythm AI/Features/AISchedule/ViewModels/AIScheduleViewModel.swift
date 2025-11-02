@@ -14,7 +14,9 @@ class AIScheduleViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var parsedTasks: [ParsedTaskUI] = []
     @Published var errorMessage: String?
-    @Published var selectedImage: UIImage?
+    @Published var selectedImages: [UIImage] = []
+
+    let maxImages = 3
 
     private let backendService = BackendService.shared
 
@@ -54,32 +56,30 @@ class AIScheduleViewModel: ObservableObject {
                         
                         userInput = ""
                     } else {
-                        
-                        errorMessage = "Failed to parse task. Please try again."
+
+                        errorMessage = "Couldn't understand that. Try being more specific."
                     }
                 }
             } catch let error as BackendError {
                 await MainActor.run {
                     isLoading = false
-                    
 
                     
                     switch error {
                     case .unauthorized:
                         errorMessage = "Please sign in to use AI features"
                     case .networkError:
-                        errorMessage = "Network error. Check your connection."
+                        errorMessage = "Can't connect. Check your internet"
+                    case .serverError:
+                        errorMessage = "Our AI is taking a break. Try again in a moment"
                     default:
-                        errorMessage = error.localizedDescription
+                        errorMessage = "Something went wrong. Please try again"
                     }
-
-                    
                 }
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    
-                    errorMessage = "Something went wrong. Please try again."
+                    errorMessage = "Hmm, that didn't work. Try rephrasing your request"
                 }
             }
         }
@@ -106,16 +106,7 @@ class AIScheduleViewModel: ObservableObject {
 
         if let targetDate = dateFormatter.date(from: task.date) {
             
-            let previousDate = viewModel.selectedDate
-
-            
-            viewModel.selectedDate = targetDate
-
-            
-            viewModel.addEvent(newEvent)
-
-            
-            viewModel.selectedDate = previousDate
+            viewModel.addEvent(newEvent, for: targetDate)
         } else {
             
             viewModel.addEvent(newEvent)
@@ -128,10 +119,10 @@ class AIScheduleViewModel: ObservableObject {
         parsedTasks.removeAll { $0.id == task.id }
     }
 
-    // MARK: - Image Handling
+    
 
-    func parseTaskFromImage() {
-        guard let image = selectedImage else { return }
+    func parseTaskFromImages() {
+        guard !selectedImages.isEmpty else { return }
 
         isLoading = true
         errorMessage = nil
@@ -140,18 +131,26 @@ class AIScheduleViewModel: ObservableObject {
 
         Task {
             do {
-                // Convert UIImage to Data (JPEG format)
-                guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                
+                var imageDataArray: [Data] = []
+                for image in selectedImages {
+                    guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                        continue
+                    }
+                    imageDataArray.append(imageData)
+                }
+
+                guard !imageDataArray.isEmpty else {
                     await MainActor.run {
                         isLoading = false
-                        errorMessage = "Failed to process image"
+                        errorMessage = "Couldn't process images. Please try different photos"
                     }
                     return
                 }
 
-                // Parse schedule from image
-                let results = try await backendService.parseScheduleFromImage(
-                    imageData: imageData,
+                
+                let results = try await backendService.parseScheduleFromImages(
+                    imagesData: imageDataArray,
                     prompt: currentPrompt
                 )
 
@@ -175,41 +174,51 @@ class AIScheduleViewModel: ObservableObject {
                             parsedTasks.append(uiTask)
                         }
 
-                        
+
                         userInput = ""
-                        selectedImage = nil // Clear the image after processing
+                        selectedImages = [] 
                     } else {
-                        
-                        errorMessage = "No schedule found in image. Please try a clearer photo."
+
+                        errorMessage = "Couldn't find a schedule. Try different lighting or a clearer photo"
                     }
                 }
             } catch let error as BackendError {
                 await MainActor.run {
                     isLoading = false
-                    
 
+                    
                     switch error {
                     case .unauthorized:
                         errorMessage = "Please sign in to use AI features"
                     case .networkError:
-                        errorMessage = "Network error. Check your connection."
+                        errorMessage = "Can't connect. Check your internet"
+                    case .serverError:
+                        errorMessage = "Having trouble reading the image. Try again in a moment"
                     default:
-                        errorMessage = error.localizedDescription
+                        errorMessage = "Couldn't read the schedule. Try a clearer photo"
                     }
                 }
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    
-                    errorMessage = "Failed to process image. Please try again."
+                    errorMessage = "Couldn't read the schedule. Try a clearer photo"
                 }
             }
         }
     }
 
-    func clearImage() {
-        selectedImage = nil
+    func clearImages() {
+        selectedImages = []
         errorMessage = nil
+    }
+
+    func removeImage(at index: Int) {
+        guard index < selectedImages.count else { return }
+        selectedImages.remove(at: index)
+    }
+
+    var canAddMoreImages: Bool {
+        return selectedImages.count < maxImages
     }
 }
 

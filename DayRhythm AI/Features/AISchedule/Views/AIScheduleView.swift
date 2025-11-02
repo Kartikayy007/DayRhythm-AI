@@ -1,11 +1,11 @@
 
+
 //
 //  AIScheduleView.swift
 //  DayRhythm AI
 //
 //  Created by kartikay on 25/10/25.
 //
-
 
 
 import SwiftUI
@@ -250,7 +250,7 @@ struct AIScheduleView: View {
                 }
 
                 VStack(spacing: 12) {
-                    if aiViewModel.parsedTasks.isEmpty && aiViewModel.userInput.isEmpty && aiViewModel.selectedImage == nil {
+                    if aiViewModel.parsedTasks.isEmpty && aiViewModel.userInput.isEmpty && aiViewModel.selectedImages.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
                                 SuggestionPill(
@@ -314,57 +314,82 @@ struct AIScheduleView: View {
                         .frame(height: 44)
                     }
 
-                    // Image Preview
-                    if let selectedImage = aiViewModel.selectedImage {
-                        HStack(spacing: 12) {
-                            Image(uiImage: selectedImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 80, height: 80)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    if !aiViewModel.selectedImages.isEmpty {
+                        VStack(spacing: 8) {
+                            
+                            HStack {
+                                Text("\(aiViewModel.selectedImages.count)/\(aiViewModel.maxImages) images")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.5))
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Timetable Image")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
+                                Spacer()
 
-                                Text("AI will analyze this image")
-                                    .font(.system(size: 12, weight: .regular))
-                                    .foregroundColor(.white.opacity(0.6))
+                                if aiViewModel.selectedImages.count > 1 {
+                                    Button(action: {
+                                        aiViewModel.clearImages()
+                                    }) {
+                                        Text("Clear All")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.red.opacity(0.8))
+                                    }
+                                }
                             }
+                            .padding(.horizontal, 16)
 
-                            Spacer()
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    ForEach(Array(aiViewModel.selectedImages.enumerated()), id: \.offset) { index, image in
+                                        ZStack(alignment: .topTrailing) {
+                                            Image(uiImage: image)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 100, height: 100)
+                                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 12)
+                                                        .stroke(Color.appPrimary.opacity(0.3), lineWidth: 1)
+                                                )
 
-                            Button(action: {
-                                aiViewModel.clearImage()
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.white.opacity(0.4))
+                                            
+                                            Button(action: {
+                                                aiViewModel.removeImage(at: index)
+                                            }) {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .font(.system(size: 20))
+                                                    .foregroundColor(.white)
+                                                    .background(
+                                                        Circle()
+                                                            .fill(Color.black.opacity(0.6))
+                                                            .frame(width: 20, height: 20)
+                                                    )
+                                            }
+                                            .offset(x: 6, y: -6)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 16)
                             }
                         }
-                        .padding(12)
+                        .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.white.opacity(0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.appPrimary.opacity(0.3), lineWidth: 1)
-                                )
                         )
                         .padding(.horizontal, 16)
                     }
 
                     HStack(spacing: 12) {
-                        TextField(aiViewModel.selectedImage != nil ? "Add context (optional)" : "Ask anything", text: $aiViewModel.userInput)
+                        TextField(!aiViewModel.selectedImages.isEmpty ? "Add context (optional)" : "Ask anything", text: $aiViewModel.userInput)
                             .font(.system(size: 17, weight: .regular))
                             .foregroundColor(.white)
                             .focused($isTextEditorFocused)
                             .submitLabel(.send)
                             .onSubmit {
                                 isTextEditorFocused = false
-                                if aiViewModel.selectedImage != nil {
-                                    aiViewModel.parseTaskFromImage()
+                                if !aiViewModel.selectedImages.isEmpty {
+                                    aiViewModel.parseTaskFromImages()
                                 } else if !aiViewModel.userInput.isEmpty {
                                     aiViewModel.parseTask()
                                 }
@@ -372,20 +397,23 @@ struct AIScheduleView: View {
 
                         Spacer()
 
-                        // Plus button - opens image picker
+                        
                         Button(action: {
-                            showImagePicker = true
+                            if aiViewModel.canAddMoreImages {
+                                showImagePicker = true
+                            }
                         }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 24, weight: .medium))
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(aiViewModel.canAddMoreImages ? .white.opacity(0.6) : .white.opacity(0.3))
                         }
+                        .disabled(!aiViewModel.canAddMoreImages)
 
-                        // Send button - sends image or text
+                        
                         Button(action: {
                             isTextEditorFocused = false
-                            if aiViewModel.selectedImage != nil {
-                                aiViewModel.parseTaskFromImage()
+                            if !aiViewModel.selectedImages.isEmpty {
+                                aiViewModel.parseTaskFromImages()
                             } else if !aiViewModel.userInput.isEmpty {
                                 aiViewModel.parseTask()
                             }
@@ -397,10 +425,10 @@ struct AIScheduleView: View {
                             } else {
                                 Image(systemName: "arrow.up.circle.fill")
                                     .font(.system(size: 28, weight: .regular))
-                                    .foregroundColor((aiViewModel.userInput.isEmpty && aiViewModel.selectedImage == nil) ? .white.opacity(0.3) : Color.appPrimary)
+                                    .foregroundColor((aiViewModel.userInput.isEmpty && aiViewModel.selectedImages.isEmpty) ? .white.opacity(0.3) : Color.appPrimary)
                             }
                         }
-                        .disabled(aiViewModel.isLoading || (aiViewModel.userInput.isEmpty && aiViewModel.selectedImage == nil))
+                        .disabled(aiViewModel.isLoading || (aiViewModel.userInput.isEmpty && aiViewModel.selectedImages.isEmpty))
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -416,7 +444,7 @@ struct AIScheduleView: View {
                 }
                 .padding(.bottom, 20)
                 .sheet(isPresented: $showImagePicker) {
-                    ImagePicker(selectedImage: $aiViewModel.selectedImage)
+                    ImagePicker(selectedImages: $aiViewModel.selectedImages, maxSelectionLimit: aiViewModel.maxImages)
                 }
             }
         }

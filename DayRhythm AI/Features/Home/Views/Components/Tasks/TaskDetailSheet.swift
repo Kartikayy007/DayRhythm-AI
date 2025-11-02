@@ -186,8 +186,9 @@ struct TaskDetailSheet: View {
                         isLoadingInsight = false
                     }
                 } catch {
+                    
                     await MainActor.run {
-                        taskInsight = ""
+                        taskInsight = "Insights temporarily unavailable"
                         isLoadingInsight = false
                     }
                 }

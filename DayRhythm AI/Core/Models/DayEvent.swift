@@ -7,7 +7,14 @@
 
 import SwiftUI
 
-struct DayEvent: Identifiable {
+enum SyncStatus: String, Codable {
+    case local      
+    case synced     
+    case pending    
+    case conflict   
+}
+
+struct DayEvent: Identifiable, Codable {
     let id: UUID
     let title: String
     let startHour: Double
@@ -20,6 +27,15 @@ struct DayEvent: Identifiable {
     let isCompleted: Bool
     var notificationSettings: NotificationSettings
 
+    
+    var cloudId: String?           
+    var syncStatus: SyncStatus = .local
+    var lastModified: Date?
+    var dateString: String = ""    
+
+    
+    private var colorHex: String?
+
     init(
         id: UUID = UUID(),
         title: String,
@@ -31,19 +47,97 @@ struct DayEvent: Identifiable {
         description: String,
         participants: [String],
         isCompleted: Bool,
-        notificationSettings: NotificationSettings = .disabled
+        notificationSettings: NotificationSettings = .disabled,
+        cloudId: String? = nil,
+        syncStatus: SyncStatus = .local,
+        lastModified: Date? = nil,
+        dateString: String = ""
     ) {
         self.id = id
         self.title = title
         self.startHour = startHour
         self.endHour = endHour
         self.color = color
+        self.colorHex = color.toHex()
         self.category = category
         self.emoji = emoji
         self.description = description
         self.participants = participants
         self.isCompleted = isCompleted
         self.notificationSettings = notificationSettings
+        self.cloudId = cloudId
+        self.syncStatus = syncStatus
+        self.lastModified = lastModified
+        self.dateString = dateString
+    }
+
+    
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case startHour
+        case endHour
+        case colorHex
+        case category
+        case emoji
+        case description
+        case participants
+        case isCompleted
+        case notificationSettings
+        case cloudId
+        case syncStatus
+        case lastModified
+        case dateString
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        startHour = try container.decode(Double.self, forKey: .startHour)
+        endHour = try container.decode(Double.self, forKey: .endHour)
+
+        
+        let hexString = try container.decodeIfPresent(String.self, forKey: .colorHex)
+        self.colorHex = hexString
+        self.color = Color(hex: hexString ?? "#FF6B35") ?? .orange
+
+        category = try container.decode(String.self, forKey: .category)
+        emoji = try container.decode(String.self, forKey: .emoji)
+        description = try container.decode(String.self, forKey: .description)
+        participants = try container.decode([String].self, forKey: .participants)
+        isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
+        notificationSettings = try container.decode(NotificationSettings.self, forKey: .notificationSettings)
+
+        
+        cloudId = try container.decodeIfPresent(String.self, forKey: .cloudId)
+        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .local
+        lastModified = try container.decodeIfPresent(Date.self, forKey: .lastModified)
+        dateString = try container.decodeIfPresent(String.self, forKey: .dateString) ?? ""
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(startHour, forKey: .startHour)
+        try container.encode(endHour, forKey: .endHour)
+        try container.encode(colorHex ?? color.toHex(), forKey: .colorHex)
+        try container.encode(category, forKey: .category)
+        try container.encode(emoji, forKey: .emoji)
+        try container.encode(description, forKey: .description)
+        try container.encode(participants, forKey: .participants)
+        try container.encode(isCompleted, forKey: .isCompleted)
+        try container.encode(notificationSettings, forKey: .notificationSettings)
+
+        
+        try container.encodeIfPresent(cloudId, forKey: .cloudId)
+        try container.encode(syncStatus, forKey: .syncStatus)
+        try container.encodeIfPresent(lastModified, forKey: .lastModified)
+        try container.encode(dateString, forKey: .dateString)
     }
 
     var duration: Double {

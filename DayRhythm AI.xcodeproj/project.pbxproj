@@ -22,22 +22,9 @@
 		931835BA2EA3AA7B00A96994 /* DayRhythm AI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DayRhythm AI.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		93EF28A82EB361D00051A5EE /* Exceptions for "DayRhythm AI" folder in "DayRhythm AI" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"DayRhythm-AI-Info.plist",
-			);
-			target = 931835B92EA3AA7B00A96994 /* DayRhythm AI */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		931835BC2EA3AA7B00A96994 /* DayRhythm AI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				93EF28A82EB361D00051A5EE /* Exceptions for "DayRhythm AI" folder in "DayRhythm AI" target */,
-			);
 			path = "DayRhythm AI";
 			sourceTree = "<group>";
 		};

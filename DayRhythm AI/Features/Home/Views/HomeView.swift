@@ -41,7 +41,7 @@ struct HomeView: View {
                                         participants: event.participants,
                                         isCompleted: event.isCompleted
                                     )
-                                    viewModel.updateEvent(event, with: updatedEvent)
+                                    viewModel.updateEvent(event, with: updatedEvent, for: viewModel.selectedDate)
                                 }
                             },
                             onEventTap: { event in

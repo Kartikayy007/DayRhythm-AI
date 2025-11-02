@@ -4,7 +4,6 @@
 //
 //  Created by Claude on 31/10/25.
 //
-
 import Foundation
 import Supabase
 
@@ -39,9 +38,9 @@ class BackendService {
 
     private init() {}
 
-    
+
     func parseSchedule(prompt: String) async throws -> [BackendParsedTask] {
-        let endpoint = "\(baseURL)/api/ai/parse-schedule"
+        let endpoint = "\(baseURL)/ai/parse-schedule"
 
         let body: [String: Any] = ["prompt": prompt]
 
@@ -54,11 +53,26 @@ class BackendService {
         return response.data.events
     }
 
-    /// Parse schedule from image using Gemini Vision
-    func parseScheduleFromImage(imageData: Data, prompt: String? = nil) async throws -> [BackendParsedTask] {
-        let endpoint = "\(baseURL)/api/ai/parse-schedule-image"
+    
+    func parseSchedulePro(prompt: String) async throws -> [BackendParsedTask] {
+        let endpoint = "\(baseURL)/ai/parse-schedule-pro"
 
-        // Convert image to base64
+        let body: [String: Any] = ["prompt": prompt]
+
+        let response: ParseScheduleResponse = try await makeAuthenticatedRequest(
+            endpoint: endpoint,
+            method: "POST",
+            body: body
+        )
+
+        return response.data.events
+    }
+
+    
+    func parseScheduleFromImage(imageData: Data, prompt: String? = nil) async throws -> [BackendParsedTask] {
+        let endpoint = "\(baseURL)/ai/parse-schedule-image"
+
+        
         let base64Image = imageData.base64EncodedString()
 
         var body: [String: Any] = ["image": base64Image]
@@ -75,17 +89,38 @@ class BackendService {
         return response.data.events
     }
 
-    // MARK: - Day Insights
+    
+    func parseScheduleFromImages(imagesData: [Data], prompt: String? = nil) async throws -> [BackendParsedTask] {
+        let endpoint = "\(baseURL)/ai/parse-schedule-images"
 
-    /// Generate AI insights for a specific date
-    /// - Parameter date: Date to analyze
-    /// - Returns: Day insights data with text and visual insights
+        
+        let base64Images = imagesData.map { $0.base64EncodedString() }
+
+        var body: [String: Any] = ["images": base64Images]
+        if let prompt = prompt {
+            body["prompt"] = prompt
+        }
+
+        let response: ParseScheduleResponse = try await makeAuthenticatedRequest(
+            endpoint: endpoint,
+            method: "POST",
+            body: body
+        )
+
+        return response.data.events
+    }
+
+    
+
+    
+    
+    
     func getDayInsights(date: Date) async throws -> DayInsightsData {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: date)
 
-        let endpoint = "\(baseURL)/api/ai/insights"
+        let endpoint = "\(baseURL)/ai/insights"
         let body: [String: Any] = ["date": dateString]
 
         let response: DayInsightsResponse = try await makeAuthenticatedRequest(
@@ -98,7 +133,7 @@ class BackendService {
     }
 
     func getTaskInsight(task: DayEvent) async throws -> String {
-        let endpoint = "\(baseURL)/api/ai/task-insight"
+        let endpoint = "\(baseURL)/ai/task-insight"
         let body: [String: Any] = [
             "title": task.title,
             "description": task.description,
@@ -120,7 +155,7 @@ class BackendService {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
 
-        let endpoint = "\(baseURL)/api/ai/analytics"
+        let endpoint = "\(baseURL)/ai/analytics"
         let body: [String: Any] = [
             "startDate": dateFormatter.string(from: startDate),
             "endDate": dateFormatter.string(from: endDate)

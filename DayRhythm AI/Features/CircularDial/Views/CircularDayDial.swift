@@ -470,10 +470,10 @@ private extension CircularDayDial {
             }
         }
 
-        
+
         draggedEventTimes[event.id] = (start: newStartHour, end: newEndHour)
 
-        
+
         let currentHour = Int(hourValue)
         if currentHour != lastHapticHour {
             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -483,13 +483,11 @@ private extension CircularDayDial {
         }
 
         
-        if let callback = onEventTimeChange {
-            callback(event.id, newStartHour, newEndHour)
-        }
+        
     }
 
     func handleDragEnded(event: DayEvent) {
-        
+
         isDraggingStart = false
         isDraggingEnd = false
         isDraggingMiddle = false
@@ -498,9 +496,15 @@ private extension CircularDayDial {
         lastInteractionTime = nil
 
         
+        if let finalTimes = draggedEventTimes[event.id],
+           let callback = onEventTimeChange {
+            callback(event.id, finalTimes.start, finalTimes.end)
+        }
+
+
         draggedEventTimes.removeValue(forKey: event.id)
 
-        
+
         onDragStateChange?(false)
 
         

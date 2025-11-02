@@ -257,7 +257,13 @@ struct EditTaskSheet: View {
             isCompleted: originalTask.isCompleted
         )
 
-        viewModel.updateEvent(originalTask, with: updatedEvent)
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        let taskDate = formatter.date(from: originalTask.dateString) ?? viewModel.selectedDate
+
+        viewModel.updateEvent(originalTask, with: updatedEvent, for: taskDate)
         onUpdateComplete?()
         dismiss()
     }

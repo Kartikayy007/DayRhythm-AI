@@ -15,13 +15,18 @@ struct AIInsightView: View {
     @State private var currentIndex: Int = 0
     @State private var typingTimer: Timer? = nil
 
+    
+    private var isFallbackMessage: Bool {
+        insight.contains("temporarily unavailable") || insight.contains("Insights unavailable")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            
+
             HStack(spacing: 8) {
-                Image(systemName: "sparkles")
+                Image(systemName: isFallbackMessage ? "exclamationmark.circle" : "sparkles")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(isFallbackMessage ? .white.opacity(0.5) : .white.opacity(0.8))
 
                 Text("AI Insight")
                     .font(.system(size: 14, weight: .semibold))
@@ -36,9 +41,9 @@ struct AIInsightView: View {
                 }
             }
 
-            
+
             if isLoading {
-                
+
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(0..<3) { index in
                         RoundedRectangle(cornerRadius: 4)
@@ -55,10 +60,10 @@ struct AIInsightView: View {
                     }
                 }
             } else if !insight.isEmpty {
-                
+
                 Text(displayedText.isEmpty ? insight : displayedText)
                     .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(isFallbackMessage ? .white.opacity(0.6) : .white.opacity(0.9))
                     .lineSpacing(4)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -66,7 +71,7 @@ struct AIInsightView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.white.opacity(isFallbackMessage ? 0.03 : 0.05))
         )
         .onChange(of: isLoading) { newLoadingState in
             

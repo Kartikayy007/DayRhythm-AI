@@ -19,12 +19,8 @@ struct DayRhythm_AIApp: App {
                     let granted = await NotificationService.shared.requestAuthorization()
                     let status = await NotificationService.shared.checkAuthorizationStatus()
 
-                    
-                    
-                    
-
                     if !granted {
-                        
+
                     }
                 }
         }

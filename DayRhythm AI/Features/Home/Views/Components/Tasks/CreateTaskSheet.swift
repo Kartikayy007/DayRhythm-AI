@@ -16,7 +16,16 @@ struct CreateTaskSheet: View {
 
     @State private var title = ""
     @State private var selectedEmoji = "🤞"
-    @State private var selectedColor = Color(red: 0, green: 0, blue: 0)
+    @State private var selectedColor = [
+        Color(hex: "#FF5733") ?? Color.red,
+        Color(hex: "#33FF57") ?? Color.green,
+        Color(hex: "#3357FF") ?? Color.blue,
+        Color(hex: "#F333FF") ?? Color.purple,
+        Color(hex: "#FF33A8") ?? Color.pink,
+        Color(hex: "#33FFF5") ?? Color.cyan,
+        Color(hex: "#FFD433") ?? Color.yellow,
+        Color(hex: "#FF8C33") ?? Color.orange
+    ].randomElement() ?? Color.appPrimary
     @State private var selectedDate = Date()
     @State private var startTime = Date()
     @State private var endTime = Date().addingTimeInterval(900)
@@ -59,7 +68,12 @@ struct CreateTaskSheet: View {
             emoji: selectedEmoji,
             description: notes,
             participants: existingTask?.participants ?? [],
-            isCompleted: existingTask?.isCompleted ?? false
+            isCompleted: existingTask?.isCompleted ?? false,
+            notificationSettings: NotificationSettings(
+                enabled: notificationEnabled,
+                minutesBefore: notificationMinutes,
+                notificationIds: []
+            )
         )
     }
 
@@ -319,6 +333,16 @@ struct CreateTaskSheet: View {
         }
         .onAppear {
             if let task = existingTask {
+                
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                formatter.timeZone = TimeZone.current
+                if let taskDate = formatter.date(from: task.dateString) {
+                    selectedDate = taskDate
+                } else {
+                    
+                    selectedDate = viewModel.selectedDate
+                }
 
                 title = task.title
                 notes = task.description
@@ -338,6 +362,8 @@ struct CreateTaskSheet: View {
                 notificationEnabled = task.notificationSettings.enabled
                 notificationMinutes = task.notificationSettings.minutesBefore
             } else {
+                
+                selectedDate = viewModel.selectedDate
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     isTitleFieldFocused = true
@@ -371,12 +397,12 @@ struct CreateTaskSheet: View {
                      Double(calendar.component(.minute, from: endTime)) / 60
         let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
 
-        // Cancel existing notifications
+        
         Task {
             await NotificationService.shared.cancelAllNotifications(for: originalTask.id)
         }
 
-        // Create new notification settings
+        
         let notificationSettings = NotificationSettings(
             enabled: notificationEnabled,
             minutesBefore: notificationMinutes,
@@ -397,9 +423,9 @@ struct CreateTaskSheet: View {
             notificationSettings: notificationSettings
         )
 
-        viewModel.updateEvent(originalTask, with: updatedEvent)
+        viewModel.updateEvent(originalTask, with: updatedEvent, for: selectedDate)
 
-        // Schedule new notifications if enabled
+        
         if notificationEnabled && !notificationMinutes.isEmpty {
             Task {
                 let identifiers = await NotificationService.shared.scheduleNotifications(
@@ -408,15 +434,15 @@ struct CreateTaskSheet: View {
                     minutesBeforeOptions: notificationMinutes
                 )
 
-                // Update event with notification IDs
+                
                 if !identifiers.isEmpty {
                     var finalSettings = notificationSettings
                     finalSettings.notificationIds = identifiers
                     var finalEvent = updatedEvent
                     finalEvent.notificationSettings = finalSettings
-                    viewModel.updateEvent(updatedEvent, with: finalEvent)
+                    viewModel.updateEvent(updatedEvent, with: finalEvent, for: selectedDate)
                 } else if !notificationMinutes.isEmpty {
-                    // All notifications failed to schedule
+                    
                     await MainActor.run {
                         showNotificationError("Failed to schedule notifications. The task time may be in the past or notifications are disabled.")
                     }
@@ -436,7 +462,7 @@ struct CreateTaskSheet: View {
                      Double(calendar.component(.minute, from: endTime)) / 60
         let endHour = endHourCalculated > startHour ? endHourCalculated : endHourCalculated + 24
 
-        // Create notification settings
+        
         let notificationSettings = NotificationSettings(
             enabled: notificationEnabled,
             minutesBefore: notificationMinutes,
@@ -456,9 +482,9 @@ struct CreateTaskSheet: View {
             notificationSettings: notificationSettings
         )
 
-        viewModel.addEvent(newEvent, repeatDaily: repeatEnabled)
+        viewModel.addEvent(newEvent, for: selectedDate, repeatDaily: repeatEnabled)
 
-        // Schedule notifications if enabled
+        
         if notificationEnabled && !notificationMinutes.isEmpty {
             Task {
                 let identifiers = await NotificationService.shared.scheduleNotifications(
@@ -472,9 +498,9 @@ struct CreateTaskSheet: View {
                     updatedSettings.notificationIds = identifiers
                     var updatedEvent = newEvent
                     updatedEvent.notificationSettings = updatedSettings
-                    viewModel.updateEvent(newEvent, with: updatedEvent)
+                    viewModel.updateEvent(newEvent, with: updatedEvent, for: selectedDate)
                 } else if !notificationMinutes.isEmpty {
-                    // All notifications failed to schedule
+                    
                     await MainActor.run {
                         showNotificationError("Failed to schedule notifications. The task time may be in the past or notifications are disabled.")
                     }
@@ -485,20 +511,20 @@ struct CreateTaskSheet: View {
         dismiss()
     }
 
-    // MARK: - Notification Permission Handling
+    
 
     private func checkNotificationPermissionAndOpen() async {
         let status = await NotificationService.shared.checkAuthorizationStatus()
 
         switch status {
         case .authorized:
-            // Permission granted, open picker
+            
             await MainActor.run {
                 showNotificationPicker = true
             }
 
         case .notDetermined:
-            // Ask for permission
+            
             let granted = await NotificationService.shared.requestAuthorization()
             await MainActor.run {
                 if granted {
@@ -509,7 +535,7 @@ struct CreateTaskSheet: View {
             }
 
         case .denied, .provisional, .ephemeral:
-            // Permission denied, show alert
+            
             await MainActor.run {
                 showNotificationPermissionAlert = true
             }
@@ -577,18 +603,18 @@ struct DatePickerSheet: View {
 
                 
                 VStack(spacing: 12) {
-//                    Image(systemName: "calendar")
-//                        .font(.system(size: 24))
-//                        .foregroundColor(Color.appPrimary)
+
+
+
 
                     DatePicker("", selection: $selectedDate, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                         .labelsHidden()
                         .colorScheme(.dark)
                         .accentColor(Color.appPrimary)
-//                        .padding()
+
                 }
-//                .padding(.horizontal)
+
             }
         }
         .presentationBackground {
@@ -629,7 +655,7 @@ struct TimePickerSheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Header
+                        
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Set Time")
@@ -648,7 +674,7 @@ struct TimePickerSheet: View {
                         .padding(.bottom, isCompact ? 12 : 20)
 
                         VStack(spacing: isCompact ? 12 : 20) {
-                            // Start Time Card
+                            
                             TimeCard(
                                 label: "START",
                                 icon: "sunrise.fill",
@@ -664,7 +690,7 @@ struct TimePickerSheet: View {
                                 shadowColor: Color.appPrimary.opacity(0.1)
                             )
 
-                            // Connection Line
+                            
                             if !isCompact {
                                 HStack {
                                     Spacer()
@@ -693,7 +719,7 @@ struct TimePickerSheet: View {
                                 }
                             }
 
-                            // End Time Card
+                            
                             TimeCard(
                                 label: "END",
                                 icon: "sunset.fill",
@@ -709,7 +735,7 @@ struct TimePickerSheet: View {
                                 shadowColor: Color.orange.opacity(0.1)
                             )
 
-                            // Duration Badge
+                            
                             HStack(spacing: isCompact ? 8 : 10) {
                                 ZStack {
                                     Circle()
@@ -733,7 +759,7 @@ struct TimePickerSheet: View {
 
                                 Spacer()
 
-                                // Duration indicator
+                                
                                 HStack(spacing: 4) {
                                     ForEach(0..<max(0, min(Int(endTime.timeIntervalSince(startTime) / 1800), 8)), id: \.self) { _ in
                                         RoundedRectangle(cornerRadius: 2)
@@ -776,7 +802,7 @@ struct TimePickerSheet: View {
     private var durationString: String {
         let duration = endTime.timeIntervalSince(startTime)
 
-        // Handle negative or zero duration
+        
         if duration <= 0 {
             return "0 min"
         }
@@ -795,7 +821,7 @@ struct TimePickerSheet: View {
     }
 }
 
-// Helper component for time cards
+
 struct TimeCard: View {
     let label: String
     let icon: String
@@ -829,7 +855,7 @@ struct TimeCard: View {
             .padding(.bottom, isCompact ? 8 : 12)
 
             HStack(spacing: 12) {
-                // Time Display
+                
                 HStack(spacing: 4) {
                     Text(timeFormatter.string(from: time))
                         .font(.system(size: timeFontSize, weight: .bold, design: .rounded))
@@ -845,7 +871,7 @@ struct TimeCard: View {
 
                 Spacer()
 
-                // Picker
+                
                 DatePicker("", selection: $timeBinding, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.compact)
                     .labelsHidden()
@@ -894,7 +920,7 @@ struct NotificationPickerSheet: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                // Header
+                
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Notifications")
@@ -917,7 +943,7 @@ struct NotificationPickerSheet: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 28)
 
-                // Enable/Disable Toggle
+                
                 HStack {
                     HStack(spacing: 12) {
                         ZStack {

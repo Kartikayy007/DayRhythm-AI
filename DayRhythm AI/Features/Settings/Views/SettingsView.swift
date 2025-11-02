@@ -29,7 +29,7 @@ struct SettingsView: View {
                             .padding(.top, 20)
 
                         if !appState.isAuthenticated {
-                            Text("Log in and start planning your next trip.")
+                            Text("Log in to sync your tasks across devices.")
                                 .font(.system(size: 16))
                                 .foregroundColor(.white.opacity(0.7))
                                 .padding(.bottom, 8)
@@ -57,21 +57,9 @@ struct SettingsView: View {
                                     )
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(user.displayName ?? "User")
+                                    Text(user.email)
                                         .font(.system(size: 20, weight: .semibold))
                                         .foregroundColor(.white)
-
-                                    Text(user.email)
-                                        .font(.system(size: 15))
-                                        .foregroundColor(.white.opacity(0.6))
-                                }
-
-                                Spacer()
-
-                                Button(action: {}) {
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.white.opacity(0.6))
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -134,10 +122,40 @@ struct SettingsView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
 
-                        SettingsRowButton(icon: "moon", title: "Dark Mode")
-                        SettingsRowButton(icon: "globe", title: "Language")
-                        SettingsRowButton(icon: "calendar", title: "First Day of Week")
-                        SettingsRowButton(icon: "clock", title: "Time Format")
+                        NavigationLink(destination: DataStorageSettingsView()) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "icloud")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(width: 24)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Data & Storage")
+                                        .font(.system(size: 17))
+                                        .foregroundColor(.white)
+
+                                    if StorageManager.shared.isCloudSyncEnabled {
+                                        Text("Cloud sync enabled")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.green)
+                                    } else {
+                                        Text("Local storage only")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.3))
+                            }
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 20)
+                            .background(Color.clear)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
 
                     Rectangle()
@@ -145,28 +163,6 @@ struct SettingsView: View {
                         .frame(height: 1)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 24)
-
-                    VStack(alignment: .leading, spacing: 0) {
-                        if appState.isAuthenticated {
-                            Text("Account")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 12)
-
-                            SettingsRowButton(icon: "person.circle", title: "Personal information")
-                            SettingsRowButton(icon: "lock", title: "Login & security")
-                            SettingsRowButton(icon: "creditcard", title: "Payments & payouts")
-                        }
-                    }
-
-                    if appState.isAuthenticated {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.1))
-                            .frame(height: 1)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 24)
-                    }
 
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Support")
