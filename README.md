@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🌅 DayRhythm AI
-<img src="docs/screenshots/logo.png" width="100" alt="Logo"/>
+<img src="docs/screenshots/logo.PNG" width="100" alt="Logo"/>
 
 ### *Reimagine Your Day with Circular Time*
 
@@ -29,45 +29,45 @@
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/IMG_2043.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2044.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2045.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2046.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2043.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2044.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2045.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2046.PNG" width="200"/></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/IMG_2047.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2048.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2049.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2050.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2047.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2048.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2049.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2050.PNG" width="200"/></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/IMG_2051.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2052.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2053.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2054.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2051.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2052.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2053.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2054.PNG" width="200"/></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/IMG_2055.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2056.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2057.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2058.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2055.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2056.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2057.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2058.PNG" width="200"/></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/IMG_2059.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2060.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2061.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2059.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2060.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2061.PNG" width="200"/></td>
     <td><img src="docs/screenshots/IMG_2062.jpg" width="200"/></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/IMG_2063.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2063.PNG" width="200"/></td>
     <td><img src="docs/screenshots/IMG_2064.jpg" width="200"/></td>
     <td><img src="docs/screenshots/IMG_2074.jpg" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2066.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2066.PNG" width="200"/></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/IMG_2067.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2068.png" width="200"/></td>
-    <td><img src="docs/screenshots/IMG_2069.png" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2067.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2068.PNG" width="200"/></td>
+    <td><img src="docs/screenshots/IMG_2069.PNG" width="200"/></td>
     <td><img src="docs/screenshots/IMG_2070.jpg" width="200"/></td>
   </tr>
 </table>
@@ -687,7 +687,7 @@ POST /api/ai/parse-schedule-images
 {
   "images": [
     "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
-    "data:image/png;base64,iVBORw0KGgoAAAAN...",
+    "data:image/PNG;base64,iVBORw0KGgoAAAAN...",
     "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
   ],
   "prompt": "Extract schedule from these meeting notes"
