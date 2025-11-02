@@ -14,18 +14,67 @@
 		932558772EB28F040037A696 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 932558762EB28F040037A696 /* Realtime */; };
 		932558792EB28F040037A696 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 932558782EB28F040037A696 /* Supabase */; };
 		938481D02EAD33870004282C /* HorizonCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = 938481CF2EAD33870004282C /* HorizonCalendar */; };
+		93CBB4D32EB7668E00002071 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93CBB4D22EB7668E00002071 /* WidgetKit.framework */; };
+		93CBB4D52EB7668F00002071 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93CBB4D42EB7668F00002071 /* SwiftUI.framework */; };
+		93CBB4E62EB7669100002071 /* DayRhythmWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 93CBB4D12EB7668E00002071 /* DayRhythmWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		93EF24D42EB348DB0051A5EE /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 93EF24D32EB348DB0051A5EE /* GoogleSignIn */; };
 		93EF24D62EB348DB0051A5EE /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93EF24D52EB348DB0051A5EE /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		93CBB4E42EB7669100002071 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931835B22EA3AA7B00A96994 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93CBB4D02EB7668E00002071;
+			remoteInfo = DayRhythmWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		93CBB4EB2EB7669100002071 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				93CBB4E62EB7669100002071 /* DayRhythmWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		931835BA2EA3AA7B00A96994 /* DayRhythm AI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DayRhythm AI.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		93CBB4D12EB7668E00002071 /* DayRhythmWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DayRhythmWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		93CBB4D22EB7668E00002071 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		93CBB4D42EB7668F00002071 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		93CBB4F72EB7679B00002071 /* DayRhythmWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DayRhythmWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		93CBB4E72EB7669100002071 /* Exceptions for "DayRhythmWidget" folder in "DayRhythmWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 93CBB4D02EB7668E00002071 /* DayRhythmWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		931835BC2EA3AA7B00A96994 /* DayRhythm AI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "DayRhythm AI";
+			sourceTree = "<group>";
+		};
+		93CBB4D62EB7668F00002071 /* DayRhythmWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				93CBB4E72EB7669100002071 /* Exceptions for "DayRhythmWidget" folder in "DayRhythmWidgetExtension" target */,
+			);
+			path = DayRhythmWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -47,13 +96,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		93CBB4CE2EB7668E00002071 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93CBB4D52EB7668F00002071 /* SwiftUI.framework in Frameworks */,
+				93CBB4D32EB7668E00002071 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		931835B12EA3AA7B00A96994 = {
 			isa = PBXGroup;
 			children = (
+				93CBB4F72EB7679B00002071 /* DayRhythmWidgetExtension.entitlements */,
 				931835BC2EA3AA7B00A96994 /* DayRhythm AI */,
+				93CBB4D62EB7668F00002071 /* DayRhythmWidget */,
 				932558752EB28F040037A696 /* Frameworks */,
 				931835BB2EA3AA7B00A96994 /* Products */,
 			);
@@ -63,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				931835BA2EA3AA7B00A96994 /* DayRhythm AI.app */,
+				93CBB4D12EB7668E00002071 /* DayRhythmWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +131,8 @@
 		932558752EB28F040037A696 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				93CBB4D22EB7668E00002071 /* WidgetKit.framework */,
+				93CBB4D42EB7668F00002071 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -84,10 +147,12 @@
 				931835B62EA3AA7B00A96994 /* Sources */,
 				931835B72EA3AA7B00A96994 /* Frameworks */,
 				931835B82EA3AA7B00A96994 /* Resources */,
+				93CBB4EB2EB7669100002071 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				93CBB4E52EB7669100002071 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				931835BC2EA3AA7B00A96994 /* DayRhythm AI */,
@@ -108,6 +173,28 @@
 			productReference = 931835BA2EA3AA7B00A96994 /* DayRhythm AI.app */;
 			productType = "com.apple.product-type.application";
 		};
+		93CBB4D02EB7668E00002071 /* DayRhythmWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 93CBB4E82EB7669100002071 /* Build configuration list for PBXNativeTarget "DayRhythmWidgetExtension" */;
+			buildPhases = (
+				93CBB4CD2EB7668E00002071 /* Sources */,
+				93CBB4CE2EB7668E00002071 /* Frameworks */,
+				93CBB4CF2EB7668E00002071 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				93CBB4D62EB7668F00002071 /* DayRhythmWidget */,
+			);
+			name = DayRhythmWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = DayRhythmWidgetExtension;
+			productReference = 93CBB4D12EB7668E00002071 /* DayRhythmWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -119,6 +206,9 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					931835B92EA3AA7B00A96994 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					93CBB4D02EB7668E00002071 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
 				};
@@ -143,12 +233,20 @@
 			projectRoot = "";
 			targets = (
 				931835B92EA3AA7B00A96994 /* DayRhythm AI */,
+				93CBB4D02EB7668E00002071 /* DayRhythmWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		931835B82EA3AA7B00A96994 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93CBB4CF2EB7668E00002071 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -165,7 +263,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		93CBB4CD2EB7668E00002071 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		93CBB4E52EB7669100002071 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93CBB4D02EB7668E00002071 /* DayRhythmWidgetExtension */;
+			targetProxy = 93CBB4E42EB7669100002071 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		931835C32EA3AA7D00A96994 /* Debug */ = {
@@ -294,6 +407,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "DayRhythm AI/DayRhythm AI.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3V9DH6TBUG;
@@ -327,6 +441,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "DayRhythm AI/DayRhythm AI.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3V9DH6TBUG;
@@ -355,6 +470,68 @@
 			};
 			name = Release;
 		};
+		93CBB4E92EB7669100002071 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = DayRhythmWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3V9DH6TBUG;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DayRhythmWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DayRhythmWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "kartikay.DayRhythm-AI.DayRhythmWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		93CBB4EA2EB7669100002071 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = DayRhythmWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3V9DH6TBUG;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DayRhythmWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DayRhythmWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "kartikay.DayRhythm-AI.DayRhythmWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -372,6 +549,15 @@
 			buildConfigurations = (
 				931835C62EA3AA7D00A96994 /* Debug */,
 				931835C72EA3AA7D00A96994 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		93CBB4E82EB7669100002071 /* Build configuration list for PBXNativeTarget "DayRhythmWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				93CBB4E92EB7669100002071 /* Debug */,
+				93CBB4EA2EB7669100002071 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

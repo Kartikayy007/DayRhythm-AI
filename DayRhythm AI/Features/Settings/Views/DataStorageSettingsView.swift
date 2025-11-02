@@ -71,7 +71,6 @@ struct DataStorageSettingsView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
 
-                        
                         if cloudSyncEnabled {
                             VStack(alignment: .leading, spacing: 16) {
                                 Label("Sync Status", systemImage: "arrow.triangle.2.circlepath")
@@ -142,13 +141,7 @@ struct DataStorageSettingsView: View {
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 16)
-                                        .background(
-                                            LinearGradient(
-                                                colors: [Color(hex: "FF6B35") ?? .orange, Color(hex: "FF8C42") ?? .orange],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
+                                        .background(Color.appPrimary)
                                         .cornerRadius(12)
                                     }
                                     .disabled(viewModel.isSyncing)
@@ -291,7 +284,7 @@ class DataStorageViewModel: ObservableObject {
     }
 
     func syncNow() async {
-        print("⚙️ [SETTINGS VM] syncNow() called")
+        
 
         await MainActor.run {
             isSyncing = true
@@ -300,10 +293,10 @@ class DataStorageViewModel: ObservableObject {
 
         do {
             let localEvents = storageManager.loadEventsFromLocal()
-            print("⚙️ [SETTINGS VM] Local events: \(localEvents.count)")
+            
 
             let syncedEvents = try await cloudSyncService.performFullSync(localEvents: localEvents)
-            print("⚙️ [SETTINGS VM] Sync completed, synced events: \(syncedEvents.count)")
+            
 
             await MainActor.run {
                 totalEvents = syncedEvents.count
@@ -320,22 +313,22 @@ class DataStorageViewModel: ObservableObject {
     }
 
     func toggleCloudSync(_ direction: DataStorageSettingsView.MigrationDirection) async {
-        print("⚙️ [SETTINGS VM] toggleCloudSync() called")
-        print("⚙️ [SETTINGS VM] Direction: \(direction)")
+        
+        
 
         await MainActor.run {
             isSyncing = true
         }
 
         if direction == .toCloud {
-            print("⚙️ [SETTINGS VM] Migrating to cloud...")
+            
             
             do {
                 let localEvents = storageManager.loadEventsFromLocal()
-                print("⚙️ [SETTINGS VM] Uploading \(localEvents.count) events to cloud")
+                
 
                 let syncedEvents = try await cloudSyncService.batchSyncEvents(localEvents, clearExisting: true)
-                print("⚙️ [SETTINGS VM] Batch sync completed, synced events: \(syncedEvents.count)")
+                
                 storageManager.saveEventsLocally(syncedEvents)
                 storageManager.isCloudSyncEnabled = true
 
@@ -352,11 +345,11 @@ class DataStorageViewModel: ObservableObject {
                 }
             }
         } else {
-            print("⚙️ [SETTINGS VM] Migrating to local...")
+            
             
             do {
                 let cloudEvents = try await cloudSyncService.fetchEvents()
-                print("⚙️ [SETTINGS VM] Downloaded \(cloudEvents.count) events from cloud")
+                
 
                 storageManager.migrateToLocal(cloudEvents)
                 storageManager.isCloudSyncEnabled = false

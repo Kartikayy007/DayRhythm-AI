@@ -42,13 +42,7 @@ struct SettingsView: View {
                         VStack(spacing: 16) {
                             HStack(spacing: 16) {
                                 Circle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color(hex: "FF6B35") ?? .orange, Color(hex: "FF8C42") ?? .orange],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
+                                    .fill(Color.appPrimary)
                                     .frame(width: 72, height: 72)
                                     .overlay(
                                         Text(String(user.email.prefix(1)).uppercased())
@@ -143,6 +137,35 @@ struct SettingsView: View {
                                             .font(.system(size: 12))
                                             .foregroundColor(.white.opacity(0.5))
                                     }
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.3))
+                            }
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 20)
+                            .background(Color.clear)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+
+                        NavigationLink(destination: CalendarSettingsView()) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(width: 24)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Calendar")
+                                        .font(.system(size: 17))
+                                        .foregroundColor(.white)
+
+                                    Text("Manage calendar sync")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.white.opacity(0.5))
                                 }
 
                                 Spacer()

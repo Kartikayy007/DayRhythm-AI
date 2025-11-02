@@ -41,20 +41,20 @@ class CloudSyncService {
 
     
     func fetchEvents(startDate: String? = nil, endDate: String? = nil) async throws -> [DayEvent] {
-        print("🔵 [CLOUD SYNC] fetchEvents() called")
-        print("🔵 [CLOUD SYNC] URL: \(Config.backendURL)\(eventsEndpoint)")
+        
+        
 
         let token = try await getCurrentToken()
-        print("🔵 [CLOUD SYNC] Token obtained: \(token.prefix(20))...")
+        
 
         var queryParams = ""
         if let startDate = startDate, let endDate = endDate {
             queryParams = "?startDate=\(startDate)&endDate=\(endDate)"
-            print("🔵 [CLOUD SYNC] Date filter: \(startDate) to \(endDate)")
+            
         }
 
         guard let url = URL(string: "\(Config.backendURL)\(eventsEndpoint)\(queryParams)") else {
-            print("❌ [CLOUD SYNC] Invalid URL")
+            
             throw CloudSyncError.invalidURL
         }
 
@@ -63,21 +63,21 @@ class CloudSyncService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        print("🔵 [CLOUD SYNC] Sending GET request to: \(url)")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            print("❌ [CLOUD SYNC] GET /api/events failed with status: \(statusCode)")
+            
             if let responseString = String(data: data, encoding: .utf8) {
-                print("❌ [CLOUD SYNC] Response: \(responseString)")
+                
             }
             throw CloudSyncError.serverError
         }
 
         let eventsResponse = try JSONDecoder().decode(EventsResponse.self, from: data)
-        print("✅ [CLOUD SYNC] Successfully fetched \(eventsResponse.events.count) events")
+        
         return eventsResponse.events.map { $0.toDayEvent() }
     }
 
@@ -85,15 +85,15 @@ class CloudSyncService {
 
     
     func saveEvent(_ event: DayEvent) async throws -> DayEvent {
-        print("🟢 [CLOUD SYNC] saveEvent() called")
-        print("🟢 [CLOUD SYNC] Event: \(event.title) at \(event.startHour)-\(event.endHour)")
-        print("🟢 [CLOUD SYNC] URL: \(Config.backendURL)\(eventsEndpoint)")
+        
+        
+        
 
         let token = try await getCurrentToken()
-        print("🟢 [CLOUD SYNC] Token obtained: \(token.prefix(20))...")
+        
 
         guard let url = URL(string: "\(Config.backendURL)\(eventsEndpoint)") else {
-            print("❌ [CLOUD SYNC] Invalid URL")
+            
             throw CloudSyncError.invalidURL
         }
 
@@ -106,24 +106,24 @@ class CloudSyncService {
         request.httpBody = try JSONEncoder().encode(eventData)
 
         if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
-            print("🟢 [CLOUD SYNC] Request body: \(bodyString)")
+            
         }
 
-        print("🟢 [CLOUD SYNC] Sending POST request to: \(url)")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 201 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            print("❌ [CLOUD SYNC] POST /api/events failed with status: \(statusCode)")
+            
             if let responseString = String(data: data, encoding: .utf8) {
-                print("❌ [CLOUD SYNC] Response: \(responseString)")
+                
             }
             throw CloudSyncError.serverError
         }
 
         let eventResponse = try JSONDecoder().decode(EventResponse.self, from: data)
-        print("✅ [CLOUD SYNC] Successfully saved event, cloudId: \(eventResponse.event.id)")
+        
 
         
         let updatedEvent = DayEvent(
@@ -150,23 +150,23 @@ class CloudSyncService {
 
     
     func updateEvent(_ event: DayEvent) async throws -> DayEvent {
-        print("🟡 [CLOUD SYNC] updateEvent() called")
-        print("🟡 [CLOUD SYNC] Event: \(event.title)")
+        
+        
 
         guard let cloudId = event.cloudId else {
             
-            print("⚠️ [CLOUD SYNC] No cloudId, calling saveEvent instead")
+            
             return try await saveEvent(event)
         }
 
-        print("🟡 [CLOUD SYNC] CloudId: \(cloudId)")
-        print("🟡 [CLOUD SYNC] URL: \(Config.backendURL)\(eventsEndpoint)/\(cloudId)")
+        
+        
 
         let token = try await getCurrentToken()
-        print("🟡 [CLOUD SYNC] Token obtained: \(token.prefix(20))...")
+        
 
         guard let url = URL(string: "\(Config.backendURL)\(eventsEndpoint)/\(cloudId)") else {
-            print("❌ [CLOUD SYNC] Invalid URL")
+            
             throw CloudSyncError.invalidURL
         }
 
@@ -179,24 +179,24 @@ class CloudSyncService {
         request.httpBody = try JSONEncoder().encode(eventData)
 
         if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
-            print("🟡 [CLOUD SYNC] Request body: \(bodyString)")
+            
         }
 
-        print("🟡 [CLOUD SYNC] Sending PUT request to: \(url)")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            print("❌ [CLOUD SYNC] PUT /api/events/:id failed with status: \(statusCode)")
+            
             if let responseString = String(data: data, encoding: .utf8) {
-                print("❌ [CLOUD SYNC] Response: \(responseString)")
+                
             }
             throw CloudSyncError.serverError
         }
 
         let eventResponse = try JSONDecoder().decode(EventResponse.self, from: data)
-        print("✅ [CLOUD SYNC] Successfully updated event, cloudId: \(eventResponse.event.id)")
+        
 
         
         let updatedEvent = DayEvent(
@@ -223,23 +223,23 @@ class CloudSyncService {
 
     
     func deleteEvent(_ event: DayEvent) async throws {
-        print("🔴 [CLOUD SYNC] deleteEvent() called")
-        print("🔴 [CLOUD SYNC] Event: \(event.title)")
+        
+        
 
         guard let cloudId = event.cloudId else {
             
-            print("⚠️ [CLOUD SYNC] No cloudId, skipping cloud delete")
+            
             return
         }
 
-        print("🔴 [CLOUD SYNC] CloudId: \(cloudId)")
-        print("🔴 [CLOUD SYNC] URL: \(Config.backendURL)\(eventsEndpoint)/\(cloudId)")
+        
+        
 
         let token = try await getCurrentToken()
-        print("🔴 [CLOUD SYNC] Token obtained: \(token.prefix(20))...")
+        
 
         guard let url = URL(string: "\(Config.backendURL)\(eventsEndpoint)/\(cloudId)") else {
-            print("❌ [CLOUD SYNC] Invalid URL")
+            
             throw CloudSyncError.invalidURL
         }
 
@@ -247,32 +247,32 @@ class CloudSyncService {
         request.httpMethod = "DELETE"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        print("🔴 [CLOUD SYNC] Sending DELETE request to: \(url)")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            print("❌ [CLOUD SYNC] DELETE /api/events/:id failed with status: \(statusCode)")
+            
             if let responseString = String(data: data, encoding: .utf8) {
-                print("❌ [CLOUD SYNC] Response: \(responseString)")
+                
             }
             throw CloudSyncError.serverError
         }
 
-        print("✅ [CLOUD SYNC] Successfully deleted event from cloud")
+        
     }
 
     
     func deleteAllEvents() async throws {
-        print("🔴🔴 [CLOUD SYNC] deleteAllEvents() called")
-        print("🔴🔴 [CLOUD SYNC] URL: \(Config.backendURL)\(eventsEndpoint)/all")
+        
+        
 
         let token = try await getCurrentToken()
-        print("🔴🔴 [CLOUD SYNC] Token obtained: \(token.prefix(20))...")
+        
 
         guard let url = URL(string: "\(Config.backendURL)\(eventsEndpoint)/all") else {
-            print("❌ [CLOUD SYNC] Invalid URL")
+            
             throw CloudSyncError.invalidURL
         }
 
@@ -280,20 +280,20 @@ class CloudSyncService {
         request.httpMethod = "DELETE"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        print("🔴🔴 [CLOUD SYNC] Sending DELETE request to: \(url)")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            print("❌ [CLOUD SYNC] DELETE /api/events/all failed with status: \(statusCode)")
+            
             if let responseString = String(data: data, encoding: .utf8) {
-                print("❌ [CLOUD SYNC] Response: \(responseString)")
+                
             }
             throw CloudSyncError.serverError
         }
 
-        print("✅ [CLOUD SYNC] Successfully deleted all events from cloud")
+        
     }
 
     
@@ -301,16 +301,16 @@ class CloudSyncService {
     
     
     func batchSyncEvents(_ events: [DayEvent], clearExisting: Bool = false) async throws -> [DayEvent] {
-        print("🟣 [CLOUD SYNC] batchSyncEvents() called")
-        print("🟣 [CLOUD SYNC] Events count: \(events.count)")
-        print("🟣 [CLOUD SYNC] Clear existing: \(clearExisting)")
-        print("🟣 [CLOUD SYNC] URL: \(Config.backendURL)\(batchEndpoint)")
+        
+        
+        
+        
 
         let token = try await getCurrentToken()
-        print("🟣 [CLOUD SYNC] Token obtained: \(token.prefix(20))...")
+        
 
         guard let url = URL(string: "\(Config.backendURL)\(batchEndpoint)") else {
-            print("❌ [CLOUD SYNC] Invalid URL")
+            
             throw CloudSyncError.invalidURL
         }
 
@@ -326,24 +326,24 @@ class CloudSyncService {
         request.httpBody = try JSONEncoder().encode(batchData)
 
         if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
-            print("🟣 [CLOUD SYNC] Request body preview: \(bodyString.prefix(200))...")
+            
         }
 
-        print("🟣 [CLOUD SYNC] Sending POST request to: \(url)")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            print("❌ [CLOUD SYNC] POST /api/events/batch failed with status: \(statusCode)")
+            
             if let responseString = String(data: data, encoding: .utf8) {
-                print("❌ [CLOUD SYNC] Response: \(responseString)")
+                
             }
             throw CloudSyncError.serverError
         }
 
         let eventsResponse = try JSONDecoder().decode(EventsResponse.self, from: data)
-        print("✅ [CLOUD SYNC] Successfully batch synced \(eventsResponse.events.count) events")
+        
 
         return eventsResponse.events.map { cloudEvent in
             let dayEvent = cloudEvent.toDayEvent()
@@ -357,33 +357,33 @@ class CloudSyncService {
     
     
     func performFullSync(localEvents: [DayEvent]) async throws -> [DayEvent] {
-        print("⚡️ [CLOUD SYNC] performFullSync() called")
-        print("⚡️ [CLOUD SYNC] Local events count: \(localEvents.count)")
+        
+        
 
         
         let cloudEvents = try await fetchEvents()
-        print("⚡️ [CLOUD SYNC] Cloud events count: \(cloudEvents.count)")
+        
 
         
         let resolvedEvents = storageManager.resolveConflicts(
             localEvents: localEvents,
             cloudEvents: cloudEvents
         )
-        print("⚡️ [CLOUD SYNC] Resolved events count: \(resolvedEvents.count)")
+        
 
         
         let eventsToUpload = resolvedEvents.filter { $0.syncStatus == .pending || $0.cloudId == nil }
-        print("⚡️ [CLOUD SYNC] Events to upload: \(eventsToUpload.count)")
+        
 
         
         var syncedEvents: [DayEvent] = []
         for event in eventsToUpload {
             do {
-                print("⚡️ [CLOUD SYNC] Uploading event: \(event.title)")
+                
                 let syncedEvent = try await (event.cloudId != nil ? updateEvent(event) : saveEvent(event))
                 syncedEvents.append(syncedEvent)
             } catch {
-                print("❌ [CLOUD SYNC] Failed to sync event \(event.id): \(error)")
+                
                 syncedEvents.append(event)  
             }
         }
@@ -392,15 +392,15 @@ class CloudSyncService {
         let alreadySynced = resolvedEvents.filter { $0.syncStatus == .synced && $0.cloudId != nil }
         let allEvents = syncedEvents + alreadySynced
 
-        print("⚡️ [CLOUD SYNC] Total synced events: \(syncedEvents.count)")
-        print("⚡️ [CLOUD SYNC] Already synced events: \(alreadySynced.count)")
-        print("⚡️ [CLOUD SYNC] All events: \(allEvents.count)")
+        
+        
+        
 
         
         storageManager.saveEventsLocally(allEvents)
         storageManager.lastSyncDate = Date()
 
-        print("✅ [CLOUD SYNC] performFullSync completed successfully")
+        
         return allEvents
     }
 }

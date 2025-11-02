@@ -52,11 +52,17 @@ struct HomeView: View {
                             }
                         )
                         .padding(.top, 40)
-                        .gesture(
-                            DragGesture()
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 30)
                                 .onEnded { value in
-                                    
+
                                     guard !isArcDragging else { return }
+                                    
+                                    let horizontalAmount = abs(value.translation.width)
+                                    let verticalAmount = abs(value.translation.height)
+
+                                    
+                                    guard horizontalAmount > verticalAmount * 2 else { return }
 
                                     if value.translation.width > 50 {
                                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {

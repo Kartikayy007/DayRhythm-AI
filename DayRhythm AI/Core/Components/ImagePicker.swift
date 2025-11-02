@@ -62,7 +62,7 @@ struct ImagePicker: UIViewControllerRepresentable {
                     defer { group.leave() }
 
                     if let error = error {
-                        print("Error loading image: \(error.localizedDescription)")
+                        
                         return
                     }
 

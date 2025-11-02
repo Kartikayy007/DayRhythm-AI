@@ -216,13 +216,7 @@ struct DarkSignupSheet: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(hex: "FF6B35") ?? .orange, Color(hex: "FF8C42") ?? .orange],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .background(Color.appPrimary)
                             .cornerRadius(12)
                         }
                         .disabled(viewModel.isLoading || viewModel.email.isEmpty || (!useOTP && (viewModel.password.isEmpty || viewModel.confirmPassword.isEmpty)))

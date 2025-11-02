@@ -2,5 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCalendarsUsageDescription</key>
+	<string>DayRhythm AI needs access to your calendar to sync your tasks and events</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>DayRhythm AI can sync with your reminders to keep all your tasks in one place</string>
 </dict>
 </plist>

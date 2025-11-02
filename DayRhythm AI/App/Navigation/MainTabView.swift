@@ -27,27 +27,27 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
+            Color.clear
+                .tabItem {
+                    Label("Add", systemImage: "plus.circle.fill")
+                }
+                .tag(2)
+
             AIScheduleView(homeViewModel: homeViewModel)
                 .tabItem {
                     Label("AI", systemImage: "sparkles")
                 }
-                .tag(2)
+                .tag(3)
 
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
-                .tag(3)
-
-            Color.clear
-                .tabItem {
-                    Label("Add", systemImage: "plus.circle.fill")
-                }
                 .tag(4)
         }
         .tint(Color.appPrimary)
         .onChange(of: selectedTab) { newValue in
-            if newValue == 4 {
+            if newValue == 2 {
                 showCreateTask = true
                 selectedTab = previousTab
             } else {

@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import WidgetKit
 
 
 
@@ -57,23 +58,26 @@ class StorageManager {
             userDefaults.set(eventData, forKey: eventsKey)
             userDefaults.synchronize()
 
-            print("✅ Successfully saved \(events.count) events locally")
+            
         } catch {
-            print("❌ Failed to save events locally: \(error.localizedDescription)")
+            
         }
     }
 
-    
+
     func saveEventsByDateLocally(_ eventsByDate: [String: [DayEvent]]) {
-        
+
         let allEvents = eventsByDate.values.flatMap { $0 }
         saveEventsLocally(allEvents)
+
+        // Also save today's events for widget
+        syncTodayEventsToWidget(eventsByDate)
     }
 
     
     func loadEventsFromLocal() -> [DayEvent] {
         guard let eventData = userDefaults.data(forKey: eventsKey) else {
-            print("ℹ️ No local events found")
+            
             return []
         }
 
@@ -82,10 +86,10 @@ class StorageManager {
             decoder.dateDecodingStrategy = .iso8601
 
             let events = try decoder.decode([DayEvent].self, from: eventData)
-            print("✅ Successfully loaded \(events.count) events from local storage")
+            
             return events
         } catch {
-            print("❌ Failed to load events from local storage: \(error.localizedDescription)")
+            
             return []
         }
     }
@@ -117,7 +121,7 @@ class StorageManager {
     func clearLocalEvents() {
         userDefaults.removeObject(forKey: eventsKey)
         userDefaults.synchronize()
-        print("✅ Cleared all local events")
+        
     }
 
     
@@ -287,8 +291,71 @@ class StorageManager {
         return formatter.string(fromByteCount: Int64(bytes))
     }
 
-    
+
     func hasLocalEvents() -> Bool {
         return !loadEventsFromLocal().isEmpty
+    }
+
+    // MARK: - Widget Sync
+
+    /// Syncs today's events to the widget storage
+    private func syncTodayEventsToWidget(_ eventsByDate: [String: [DayEvent]]) {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        let todayKey = formatter.string(from: Date())
+
+        // Get today's events
+        let todayEvents = eventsByDate[todayKey] ?? []
+
+        // Save to shared container for widget
+        saveEventsForWidget(todayEvents, for: Date())
+    }
+
+    /// Saves events to the app group container for widget access
+    func saveEventsForWidget(_ events: [DayEvent], for date: Date) {
+        // Use app group UserDefaults
+        guard let sharedDefaults = UserDefaults(suiteName: "group.kartikay.DayRhythm-AI") else {
+            print("Warning: Could not access app group for widget data sharing")
+            return
+        }
+
+        // Convert to simplified widget event format
+        let widgetEvents = events.map { event in
+            return [
+                "id": event.id.uuidString,
+                "title": event.title,
+                "startHour": event.startHour,
+                "endHour": event.endHour,
+                "colorHex": event.colorHex ?? event.color.toHex(),
+                "emoji": event.emoji
+            ] as [String : Any]
+        }
+
+        // Create date key
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        let dateKey = formatter.string(from: date)
+
+        // Save to shared UserDefaults
+        if let data = try? JSONSerialization.data(withJSONObject: widgetEvents, options: []) {
+            sharedDefaults.set(data, forKey: "widget_events_\(dateKey)")
+
+            // Also save last update time
+            sharedDefaults.set(Date(), forKey: "widget_last_update")
+
+            // Refresh widget
+            if #available(iOS 14.0, *) {
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+        }
+    }
+
+    /// Manually triggers widget refresh
+    func refreshWidget() {
+        if #available(iOS 14.0, *) {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 }

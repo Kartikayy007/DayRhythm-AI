@@ -27,14 +27,19 @@ struct DayEvent: Identifiable, Codable {
     let isCompleted: Bool
     var notificationSettings: NotificationSettings
 
-    
-    var cloudId: String?           
+
+    var cloudId: String?
     var syncStatus: SyncStatus = .local
     var lastModified: Date?
-    var dateString: String = ""    
+    var dateString: String = ""
 
     
-    private var colorHex: String?
+    var ekEventIdentifier: String?     
+    var ekCalendarIdentifier: String?  
+    var isFromCalendar: Bool = false   
+
+
+    var colorHex: String?
 
     init(
         id: UUID = UUID(),
@@ -51,7 +56,10 @@ struct DayEvent: Identifiable, Codable {
         cloudId: String? = nil,
         syncStatus: SyncStatus = .local,
         lastModified: Date? = nil,
-        dateString: String = ""
+        dateString: String = "",
+        ekEventIdentifier: String? = nil,
+        ekCalendarIdentifier: String? = nil,
+        isFromCalendar: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -69,6 +77,9 @@ struct DayEvent: Identifiable, Codable {
         self.syncStatus = syncStatus
         self.lastModified = lastModified
         self.dateString = dateString
+        self.ekEventIdentifier = ekEventIdentifier
+        self.ekCalendarIdentifier = ekCalendarIdentifier
+        self.isFromCalendar = isFromCalendar
     }
 
     
@@ -89,6 +100,9 @@ struct DayEvent: Identifiable, Codable {
         case syncStatus
         case lastModified
         case dateString
+        case ekEventIdentifier
+        case ekCalendarIdentifier
+        case isFromCalendar
     }
 
     init(from decoder: Decoder) throws {
@@ -111,11 +125,16 @@ struct DayEvent: Identifiable, Codable {
         isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
         notificationSettings = try container.decode(NotificationSettings.self, forKey: .notificationSettings)
 
-        
+
         cloudId = try container.decodeIfPresent(String.self, forKey: .cloudId)
         syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .local
         lastModified = try container.decodeIfPresent(Date.self, forKey: .lastModified)
         dateString = try container.decodeIfPresent(String.self, forKey: .dateString) ?? ""
+
+        
+        ekEventIdentifier = try container.decodeIfPresent(String.self, forKey: .ekEventIdentifier)
+        ekCalendarIdentifier = try container.decodeIfPresent(String.self, forKey: .ekCalendarIdentifier)
+        isFromCalendar = try container.decodeIfPresent(Bool.self, forKey: .isFromCalendar) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -133,11 +152,15 @@ struct DayEvent: Identifiable, Codable {
         try container.encode(isCompleted, forKey: .isCompleted)
         try container.encode(notificationSettings, forKey: .notificationSettings)
 
-        
         try container.encodeIfPresent(cloudId, forKey: .cloudId)
         try container.encode(syncStatus, forKey: .syncStatus)
         try container.encodeIfPresent(lastModified, forKey: .lastModified)
         try container.encode(dateString, forKey: .dateString)
+
+        
+        try container.encodeIfPresent(ekEventIdentifier, forKey: .ekEventIdentifier)
+        try container.encodeIfPresent(ekCalendarIdentifier, forKey: .ekCalendarIdentifier)
+        try container.encode(isFromCalendar, forKey: .isFromCalendar)
     }
 
     var duration: Double {

@@ -107,16 +107,10 @@ struct TaskDetailSheet: View {
                                 }) {
                                     Text("Sign In")
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.black)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 10)
-                                        .background(
-                                            LinearGradient(
-                                                colors: [Color(hex: "FF6B35") ?? .orange, Color(hex: "FF8C42") ?? .orange],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
+                                        .background(Color.white)
                                         .cornerRadius(8)
                                 }
                             }

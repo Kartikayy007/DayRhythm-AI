@@ -41,6 +41,7 @@ struct RadialSegment: Shape {
 enum ClockMode: String, CaseIterable {
     case twelveHour = "12h"
     case twentyFourHour = "24h"
+    case auto = "Auto"
 
     var duration: Double {
         switch self {
@@ -48,6 +49,9 @@ enum ClockMode: String, CaseIterable {
             return 12
         case .twentyFourHour:
             return 24
+        case .auto:
+            
+            return 12
         }
     }
 }
@@ -134,8 +138,8 @@ struct CircularDayDial: View {
             switch clockMode {
             case .twentyFourHour:
                 duration = event.duration
-            case .twelveHour:
-                
+            case .twelveHour, .auto:
+
                 let range = timeFilter.hourRange
                 let visibleStart = max(event.startHour, range.lowerBound)
                 let visibleEnd = min(event.endHour, range.upperBound)
@@ -149,11 +153,11 @@ struct CircularDayDial: View {
         events.filter { event in
             switch clockMode {
             case .twentyFourHour:
-                return true 
-            case .twelveHour:
-                
+                return true
+            case .twelveHour, .auto:
+
                 let range = timeFilter.hourRange
-                
+
                 return event.startHour < range.upperBound && event.endHour > range.lowerBound
             }
         }
@@ -205,6 +209,11 @@ struct CircularDayDial: View {
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             clockMode = mode
+                            
+                            if mode == .auto {
+                                let hour = Calendar.current.component(.hour, from: Date())
+                                timeFilter = hour < 12 ? .am : .pm
+                            }
                         }
                     }) {
                         Text(mode.rawValue)
@@ -219,7 +228,7 @@ struct CircularDayDial: View {
                     }
                 }
 
-                
+
                 if clockMode == .twelveHour {
                     ForEach(TimeFilter.allCases, id: \.self) { filter in
                         Button(action: {
@@ -238,28 +247,6 @@ struct CircularDayDial: View {
                                 )
                         }
                     }
-                }
-
-                
-                Button(action: {
-                    
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        if clockMode == .twelveHour {
-                            
-                            let hour = Calendar.current.component(.hour, from: Date())
-                            timeFilter = hour < 12 ? .am : .pm
-                        }
-                    }
-                }) {
-                    Text("Auto")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.6))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.1))
-                        )
                 }
             }
             
@@ -351,6 +338,17 @@ struct CircularDayDial: View {
                 currentTime = Date()
 
                 
+                if clockMode == .auto {
+                    let hour = Calendar.current.component(.hour, from: currentTime)
+                    let newFilter = hour < 12 ? TimeFilter.am : TimeFilter.pm
+                    if timeFilter != newFilter {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            timeFilter = newFilter
+                        }
+                    }
+                }
+
+
                 if let lastTime = lastInteractionTime,
                    localHighlightedEventId != nil,
                    Date().timeIntervalSince(lastTime) > 10 {
@@ -611,7 +609,7 @@ private extension CircularDayDial {
 
             switch clockMode {
             case .twentyFourHour:
-                
+
                 hourNumber("00", angle: 0)
                 hourNumber("02", angle: 30)
                 hourNumber("04", angle: 60)
@@ -624,7 +622,7 @@ private extension CircularDayDial {
                 hourNumber("18", angle: 270)
                 hourNumber("20", angle: 300)
                 hourNumber("22", angle: 330)
-            case .twelveHour:
+            case .twelveHour, .auto:
                 
                 hourNumber("12", angle: 0)
                 hourNumber("1", angle: 30)
@@ -681,7 +679,7 @@ private extension CircularDayDial {
             case .twentyFourHour:
                 let totalMinutes = hour * 60 + minute
                 return (totalMinutes / (24 * 60)) * 360
-            case .twelveHour:
+            case .twelveHour, .auto:
                 
                 var displayHour = hour
 
@@ -743,25 +741,25 @@ private extension CircularDayDial {
             startAngle = .degrees((startHour / 24) * 360 - 90)
             endAngle = .degrees((endHour / 24) * 360 - 90)
 
-        case .twelveHour:
-            
+        case .twelveHour, .auto:
+
             var adjustedStartHour = startHour
             var adjustedEndHour = endHour
 
-            
+
             if timeFilter == .am {
-                
+
                 if adjustedStartHour >= 12 { adjustedStartHour -= 12 }
                 if adjustedEndHour >= 12 { adjustedEndHour -= 12 }
             } else {
-                
+
                 if adjustedStartHour >= 12 { adjustedStartHour -= 12 }
                 else { adjustedStartHour += 12 }
                 if adjustedEndHour >= 12 { adjustedEndHour -= 12 }
                 else { adjustedEndHour += 12 }
             }
 
-            
+
             if adjustedStartHour == 0 { adjustedStartHour = 12 }
             if adjustedStartHour > 12 { adjustedStartHour -= 12 }
             if adjustedEndHour == 0 { adjustedEndHour = 12 }

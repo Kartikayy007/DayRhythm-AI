@@ -157,20 +157,14 @@ struct DarkLoginSheet: View {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 } else {
-                                    Text("Connect")
+                                    Text("Login")
                                         .font(.system(size: 17, weight: .semibold))
                                 }
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(hex: "FF6B35") ?? .orange, Color(hex: "FF8C42") ?? .orange],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .background(Color(hex: "FF6B35"))
                             .cornerRadius(12)
                         }
                         .disabled(viewModel.isLoading || viewModel.email.isEmpty || (!useOTP && viewModel.password.isEmpty))

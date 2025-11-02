@@ -111,12 +111,27 @@ struct CreateTaskSheet: View {
             return "No Alerts"
         }
 
-        let sorted = notificationMinutes.sorted(by: >)
-        if sorted.count == 1 {
-            let mins = sorted[0]
-            return mins == 0 ? "At time of event" : "\(mins) min before"
+        var alerts: [String] = []
+
+        if notificationMinutes.contains(0) {
+            alerts.append("Start")
+        }
+        if notificationMinutes.contains(-1) {
+            alerts.append("End")
+        }
+
+        for mins in notificationMinutes {
+            if mins > 0 {
+                alerts.append("\(mins)min before")
+            }
+        }
+
+        if alerts.isEmpty {
+            return "No Alerts"
+        } else if alerts.count == 1 {
+            return alerts[0]
         } else {
-            return "\(sorted.count) alerts"
+            return "\(alerts.count) alerts"
         }
     }
 
@@ -618,7 +633,7 @@ struct DatePickerSheet: View {
             }
         }
         .presentationBackground {
-            Color.black.opacity(0.8)
+            Color(white: 0.05)
         }
         .presentationCornerRadius(24)
     }
@@ -629,6 +644,8 @@ struct TimePickerSheet: View {
     @Binding var endTime: Date
     @Environment(\.dismiss) var dismiss
     @State private var animateIn = false
+    @State private var showingStartPicker = false
+    @State private var showingEndPicker = false
 
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -646,143 +663,101 @@ struct TimePickerSheet: View {
         GeometryReader { geometry in
             let isCompact = geometry.size.height < 600
             let horizontalPadding: CGFloat = min(geometry.size.width * 0.06, 24)
-            let timeFontSize: CGFloat = isCompact ? 38 : min(geometry.size.width * 0.12, 48)
-            let periodFontSize: CGFloat = isCompact ? 16 : 20
+            let timeFontSize: CGFloat = isCompact ? 42 : min(geometry.size.width * 0.13, 52)
+            let periodFontSize: CGFloat = isCompact ? 18 : 22
 
             ZStack {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Set Time")
-                                    .font(.system(size: isCompact ? 20 : 24, weight: .bold))
-                                    .foregroundColor(.white)
+                VStack(spacing: 0) {
 
-                                Text("Choose start and end times")
-                                    .font(.system(size: isCompact ? 11 : 13))
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Set Time")
+                                .font(.system(size: isCompact ? 22 : 26, weight: .bold))
+                                .foregroundColor(.white)
 
-                            Spacer()
+                            Text("Tap time to edit")
+                                .font(.system(size: isCompact ? 12 : 14))
+                                .foregroundColor(.white.opacity(0.5))
                         }
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.top, isCompact ? 16 : 28)
-                        .padding(.bottom, isCompact ? 12 : 20)
 
-                        VStack(spacing: isCompact ? 12 : 20) {
-                            
-                            TimeCard(
-                                label: "START",
-                                icon: "sunrise.fill",
-                                iconColor: Color.appPrimary,
-                                time: startTime,
-                                timeBinding: $startTime,
-                                timeFormatter: timeFormatter,
-                                periodFormatter: periodFormatter,
-                                timeFontSize: timeFontSize,
-                                periodFontSize: periodFontSize,
-                                isCompact: isCompact,
-                                gradientColors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.05)],
-                                shadowColor: Color.appPrimary.opacity(0.1)
-                            )
+                        Spacer()
+                    }
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.top, isCompact ? 20 : 32)
+                    .padding(.bottom, isCompact ? 16 : 24)
 
-                            
-                            if !isCompact {
-                                HStack {
-                                    Spacer()
+                    VStack(spacing: isCompact ? 20 : 32) {
 
-                                    VStack(spacing: 4) {
-                                        Circle()
-                                            .fill(Color.appPrimary.opacity(0.3))
-                                            .frame(width: 4, height: 4)
+                        TimeCard(
+                            label: "START",
+                            icon: "sunrise.fill",
+                            iconColor: Color.appPrimary,
+                            time: startTime,
+                            timeBinding: $startTime,
+                            timeFormatter: timeFormatter,
+                            periodFormatter: periodFormatter,
+                            timeFontSize: timeFontSize,
+                            periodFontSize: periodFontSize,
+                            isCompact: isCompact,
+                            isShowingPicker: $showingStartPicker,
+                            gradientColors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.05)],
+                            shadowColor: Color.appPrimary.opacity(0.15)
+                        )
 
-                                        Rectangle()
-                                            .fill(
-                                                LinearGradient(
-                                                    colors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.1)],
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
-                                                )
-                                            )
-                                            .frame(width: 2, height: 20)
 
-                                        Circle()
-                                            .fill(Color.appPrimary.opacity(0.3))
-                                            .frame(width: 4, height: 4)
-                                    }
+                        if !isCompact {
+                            HStack {
+                                Spacer()
 
-                                    Spacer()
-                                }
-                            }
-
-                            
-                            TimeCard(
-                                label: "END",
-                                icon: "sunset.fill",
-                                iconColor: Color.orange,
-                                time: endTime,
-                                timeBinding: $endTime,
-                                timeFormatter: timeFormatter,
-                                periodFormatter: periodFormatter,
-                                timeFontSize: timeFontSize,
-                                periodFontSize: periodFontSize,
-                                isCompact: isCompact,
-                                gradientColors: [Color.orange.opacity(0.3), Color.orange.opacity(0.05)],
-                                shadowColor: Color.orange.opacity(0.1)
-                            )
-
-                            
-                            HStack(spacing: isCompact ? 8 : 10) {
-                                ZStack {
+                                VStack(spacing: 6) {
                                     Circle()
-                                        .fill(Color.appPrimary.opacity(0.15))
-                                        .frame(width: isCompact ? 36 : 40, height: isCompact ? 36 : 40)
+                                        .fill(Color.appPrimary.opacity(0.4))
+                                        .frame(width: 5, height: 5)
 
-                                    Image(systemName: "timer")
-                                        .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
-                                        .foregroundColor(Color.appPrimary)
-                                }
+                                    Rectangle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.appPrimary.opacity(0.4), Color.appPrimary.opacity(0.1)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                        .frame(width: 2, height: 30)
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Total Duration")
-                                        .font(.system(size: isCompact ? 10 : 11, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.5))
-
-                                    Text(durationString)
-                                        .font(.system(size: isCompact ? 16 : 18, weight: .bold, design: .rounded))
-                                        .foregroundColor(Color.appPrimary)
+                                    Circle()
+                                        .fill(Color.orange.opacity(0.4))
+                                        .frame(width: 5, height: 5)
                                 }
 
                                 Spacer()
-
-                                
-                                HStack(spacing: 4) {
-                                    ForEach(0..<max(0, min(Int(endTime.timeIntervalSince(startTime) / 1800), 8)), id: \.self) { _ in
-                                        RoundedRectangle(cornerRadius: 2)
-                                            .fill(Color.appPrimary.opacity(0.6))
-                                            .frame(width: 4, height: isCompact ? 12 : 16)
-                                    }
-                                }
                             }
-                            .padding(isCompact ? 12 : 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.white.opacity(0.04))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                                    )
-                            )
                         }
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.top, 8)
-                        .padding(.bottom, 50)
+
+
+                        TimeCard(
+                            label: "END",
+                            icon: "sunset.fill",
+                            iconColor: Color.orange,
+                            time: endTime,
+                            timeBinding: $endTime,
+                            timeFormatter: timeFormatter,
+                            periodFormatter: periodFormatter,
+                            timeFontSize: timeFontSize,
+                            periodFontSize: periodFontSize,
+                            isCompact: isCompact,
+                            isShowingPicker: $showingEndPicker,
+                            gradientColors: [Color.orange.opacity(0.3), Color.orange.opacity(0.05)],
+                            shadowColor: Color.orange.opacity(0.15)
+                        )
                     }
-                    .padding(.bottom, 30)
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.top, 8)
+                    .padding(.bottom, 40)
+
+                    Spacer()
                 }
                 .scaleEffect(animateIn ? 1 : 0.95)
                 .opacity(animateIn ? 1 : 0)
@@ -791,33 +766,106 @@ struct TimePickerSheet: View {
                         animateIn = true
                     }
                 }
+
+                
+                if showingStartPicker {
+                    Color.black.opacity(0.7)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.3)) {
+                                showingStartPicker = false
+                            }
+                        }
+                        .overlay(
+                            VStack(spacing: 16) {
+                                Text("SELECT START TIME")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .tracking(1.2)
+
+                                DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
+                                    .datePickerStyle(.wheel)
+                                    .labelsHidden()
+                                    .colorScheme(.dark)
+                                    .accentColor(Color.appPrimary)
+                                    .frame(height: 200)
+                                    .padding(.horizontal, 20)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color(white: 0.08))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(Color.appPrimary.opacity(0.3), lineWidth: 1)
+                                            )
+                                    )
+                                    .shadow(color: .black.opacity(0.6), radius: 30, y: 10)
+                                    .onChange(of: startTime) {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                            withAnimation(.spring(response: 0.3)) {
+                                                showingStartPicker = false
+                                            }
+                                        }
+                                    }
+                            }
+                            .padding(.horizontal, 40)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        )
+                        .transition(.opacity)
+                        .zIndex(1000)
+                }
+
+                
+                if showingEndPicker {
+                    Color.black.opacity(0.7)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.3)) {
+                                showingEndPicker = false
+                            }
+                        }
+                        .overlay(
+                            VStack(spacing: 16) {
+                                Text("SELECT END TIME")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .tracking(1.2)
+
+                                DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
+                                    .datePickerStyle(.wheel)
+                                    .labelsHidden()
+                                    .colorScheme(.dark)
+                                    .accentColor(Color.orange)
+                                    .frame(height: 200)
+                                    .padding(.horizontal, 20)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color(white: 0.08))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                            )
+                                    )
+                                    .shadow(color: .black.opacity(0.6), radius: 30, y: 10)
+                                    .onChange(of: endTime) {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                            withAnimation(.spring(response: 0.3)) {
+                                                showingEndPicker = false
+                                            }
+                                        }
+                                    }
+                            }
+                            .padding(.horizontal, 40)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        )
+                        .transition(.opacity)
+                        .zIndex(1000)
+                }
             }
         }
         .presentationBackground {
-            Color.black.opacity(0.85)
+            Color(white: 0.05)
         }
         .presentationCornerRadius(28)
-    }
-
-    private var durationString: String {
-        let duration = endTime.timeIntervalSince(startTime)
-
-        
-        if duration <= 0 {
-            return "0 min"
-        }
-
-        let minutes = Int(duration / 60)
-        let hours = minutes / 60
-        let remainingMinutes = minutes % 60
-
-        if hours > 0 && remainingMinutes > 0 {
-            return "\(hours)h \(remainingMinutes)m"
-        } else if hours > 0 {
-            return "\(hours) hour\(hours == 1 ? "" : "s")"
-        } else {
-            return "\(minutes) min"
-        }
     }
 }
 
@@ -833,6 +881,7 @@ struct TimeCard: View {
     let timeFontSize: CGFloat
     let periodFontSize: CGFloat
     let isCompact: Bool
+    @Binding var isShowingPicker: Bool
     let gradientColors: [Color]
     let shadowColor: Color
 
@@ -854,8 +903,11 @@ struct TimeCard: View {
             .padding(.top, isCompact ? 12 : 16)
             .padding(.bottom, isCompact ? 8 : 12)
 
-            HStack(spacing: 12) {
-                
+            Button(action: {
+                withAnimation(.spring(response: 0.3)) {
+                    isShowingPicker.toggle()
+                }
+            }) {
                 HStack(spacing: 4) {
                     Text(timeFormatter.string(from: time))
                         .font(.system(size: timeFontSize, weight: .bold, design: .rounded))
@@ -865,22 +917,15 @@ struct TimeCard: View {
 
                     Text(periodFormatter.string(from: time))
                         .font(.system(size: periodFontSize, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(.white.opacity(0.7))
                         .offset(y: timeFontSize * 0.16)
                 }
-
-                Spacer()
-
-                
-                DatePicker("", selection: $timeBinding, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                    .colorScheme(.dark)
-                    .accentColor(iconColor)
-                    .scaleEffect(isCompact ? 1.0 : 1.1)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(PlainButtonStyle())
             .padding(.horizontal, isCompact ? 16 : 20)
-            .padding(.bottom, isCompact ? 12 : 20)
+            .padding(.bottom, isCompact ? 16 : 20)
         }
         .background(
             RoundedRectangle(cornerRadius: isCompact ? 16 : 20)
@@ -889,15 +934,17 @@ struct TimeCard: View {
                     RoundedRectangle(cornerRadius: isCompact ? 16 : 20)
                         .stroke(
                             LinearGradient(
-                                colors: gradientColors,
+                                colors: [iconColor.opacity(0.2), iconColor.opacity(0.05)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1
+                            lineWidth: isShowingPicker ? 2 : 1
                         )
                 )
         )
         .shadow(color: shadowColor, radius: isCompact ? 10 : 20, x: 0, y: isCompact ? 5 : 10)
+        .scaleEffect(isShowingPicker ? 1.02 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isShowingPicker)
     }
 }
 
@@ -905,157 +952,251 @@ struct NotificationPickerSheet: View {
     @Binding var isEnabled: Bool
     @Binding var selectedMinutes: [Int]
     @Environment(\.dismiss) var dismiss
+    @State private var animateIn = false
+    @State private var atStartEnabled = false
+    @State private var atEndEnabled = false
+    @State private var customEnabled = false
+    @State private var customMinutes = 5
 
-    private let notificationOptions: [(label: String, minutes: Int)] = [
-        ("At time of event", 0),
-        ("5 minutes before", 5),
-        ("15 minutes before", 15),
-        ("30 minutes before", 30),
-        ("1 hour before", 60)
-    ]
+    private let customTimeOptions = [5, 10, 15, 30, 45, 60]
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.3)
+            Color.black.opacity(0.5)
                 .ignoresSafeArea()
+                .background(.ultraThinMaterial)
 
-            VStack(spacing: 20) {
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Notifications")
-                            .font(.system(size: 24, weight: .bold))
+            VStack(spacing: 0) {
+                VStack(spacing: 8) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(width: 40, height: 4)
+                        .padding(.top, 12)
+
+                    HStack {
+                        Text("Alerts")
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
 
-                        Text("Get reminded before your task")
-                            .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
+                        Spacer()
 
-                    Spacer()
+                        Button(action: {
+                            updateSelectedMinutes()
+                            dismiss()
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white.opacity(0.1))
+                                    .frame(width: 32, height: 32)
 
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.white.opacity(0.3))
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 28)
-
-                
-                HStack {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.appPrimary.opacity(0.15))
-                                .frame(width: 40, height: 40)
-
-                            Image(systemName: "bell.badge")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(Color.appPrimary)
-                        }
-
-                        Text("Enable Notifications")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: $isEnabled)
-                        .tint(Color.appPrimary)
-                }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.05))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                        )
-                )
-                .padding(.horizontal, 24)
-
-                if isEnabled {
-                    VStack(spacing: 12) {
-                        ForEach(notificationOptions, id: \.minutes) { option in
-                            NotificationOptionRow(
-                                label: option.label,
-                                minutes: option.minutes,
-                                isSelected: selectedMinutes.contains(option.minutes),
-                                onTap: {
-                                    if selectedMinutes.contains(option.minutes) {
-                                        selectedMinutes.removeAll { $0 == option.minutes }
-                                    } else {
-                                        selectedMinutes.append(option.minutes)
-                                        selectedMinutes.sort(by: >)
-                                    }
-                                }
-                            )
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
                         }
                     }
                     .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
                 }
+
+                
+                VStack(spacing: 20) {
+                    
+                    AlertRow(
+                        icon: "play.circle",
+                        iconColor: Color.green,
+                        label: "At start of task",
+                        isSelected: $atStartEnabled
+                    )
+
+                    Divider()
+                        .background(Color.white.opacity(0.06))
+                        .padding(.horizontal, 24)
+
+                    
+                    AlertRow(
+                        icon: "stop.circle",
+                        iconColor: Color.orange,
+                        label: "At end of task",
+                        isSelected: $atEndEnabled
+                    )
+
+                    Divider()
+                        .background(Color.white.opacity(0.06))
+                        .padding(.horizontal, 24)
+
+                    
+                    VStack(spacing: 12) {
+                        HStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        customEnabled
+                                        ? Color.appPrimary.opacity(0.15)
+                                        : Color.white.opacity(0.05)
+                                    )
+                                    .frame(width: 44, height: 44)
+
+                                Image(systemName: "clock.badge")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(
+                                        customEnabled
+                                        ? Color.appPrimary
+                                        : .white.opacity(0.5)
+                                    )
+                            }
+
+                            Text("\(customMinutes) minutes before")
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundColor(.white)
+
+                            Spacer()
+
+                            Toggle("", isOn: $customEnabled.animation(.spring(response: 0.3)))
+                                .tint(Color.appPrimary)
+                                .scaleEffect(0.95)
+                        }
+                        .padding(.horizontal, 24)
+
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(customTimeOptions, id: \.self) { minutes in
+                                    Button(action: {
+                                        customMinutes = minutes
+                                        if !customEnabled {
+                                            customEnabled = true
+                                        }
+                                    }) {
+                                        Text("\(minutes) min")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(
+                                                customMinutes == minutes && customEnabled
+                                                ? .white
+                                                : .white.opacity(0.6)
+                                            )
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                Capsule()
+                                                    .fill(
+                                                        customMinutes == minutes && customEnabled
+                                                        ? Color.appPrimary
+                                                        : Color.white.opacity(0.08)
+                                                    )
+                                            )
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                        }
+                        .opacity(customEnabled ? 1 : 0.6)
+                    }
+                }
+                .padding(.top, 20)
 
                 Spacer()
             }
+            .scaleEffect(animateIn ? 1 : 0.9)
+            .opacity(animateIn ? 1 : 0)
+        }
+        .onAppear {
+            loadCurrentSettings()
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                animateIn = true
+            }
+        }
+        .onDisappear {
+            updateSelectedMinutes()
         }
         .presentationBackground {
-            Color.black.opacity(0.85)
+            Color.black.opacity(0.9)
+                .background(.ultraThinMaterial)
         }
-        .presentationCornerRadius(24)
+        .presentationCornerRadius(32)
+    }
+
+    private func loadCurrentSettings() {
+        
+        atStartEnabled = selectedMinutes.contains(0)
+        atEndEnabled = selectedMinutes.contains(-1) 
+
+        
+        for minutes in selectedMinutes {
+            if minutes > 0 {
+                customEnabled = true
+                customMinutes = minutes
+                break
+            }
+        }
+
+        
+        isEnabled = !selectedMinutes.isEmpty
+    }
+
+    private func updateSelectedMinutes() {
+        selectedMinutes.removeAll()
+
+        if atStartEnabled {
+            selectedMinutes.append(0)
+        }
+
+        if atEndEnabled {
+            selectedMinutes.append(-1) 
+        }
+
+        if customEnabled {
+            selectedMinutes.append(customMinutes)
+        }
+
+        isEnabled = !selectedMinutes.isEmpty
     }
 }
 
-struct NotificationOptionRow: View {
+struct AlertRow: View {
+    let icon: String
+    let iconColor: Color
     let label: String
-    let minutes: Int
-    let isSelected: Bool
-    let onTap: () -> Void
+    @Binding var isSelected: Bool
 
     var body: some View {
-        Button(action: onTap) {
-            HStack {
-                HStack(spacing: 12) {
-                    Image(systemName: minutes == 0 ? "clock" : "clock.badge.exclamationmark")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.6))
-                        .frame(width: 24)
-
-                    Text(label)
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(Color.appPrimary)
-                } else {
-                    Image(systemName: "circle")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white.opacity(0.2))
-                }
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.appPrimary.opacity(0.1) : Color.white.opacity(0.03))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(
-                                isSelected ? Color.appPrimary.opacity(0.3) : Color.white.opacity(0.05),
-                                lineWidth: 1
-                            )
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        isSelected
+                        ? iconColor.opacity(0.15)
+                        : Color.white.opacity(0.05)
                     )
-            )
+                    .frame(width: 44, height: 44)
+                    .animation(.spring(response: 0.3), value: isSelected)
+
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(
+                        isSelected
+                        ? iconColor
+                        : .white.opacity(0.5)
+                    )
+                    .animation(.spring(response: 0.3), value: isSelected)
+            }
+
+            Text(label)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundColor(.white)
+
+            Spacer()
+
+            Toggle("", isOn: $isSelected.animation(.spring(response: 0.3)))
+                .tint(iconColor)
+                .scaleEffect(0.95)
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(.horizontal, 24)
+        .contentShape(Rectangle())
     }
 }
+
 
 #Preview {
     CreateTaskSheet(viewModel: HomeViewModel())
