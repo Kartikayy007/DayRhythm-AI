@@ -50,7 +50,7 @@ struct DayRhythmWidgetLiveActivity: Widget {
             } minimal: {
                 Text(context.state.emoji)
             }
-            .widgetURL(URL(string: "http:
+            .widgetURL(URL(string: "dayrhythm://open"))
             .keylineTint(Color.red)
         }
     }

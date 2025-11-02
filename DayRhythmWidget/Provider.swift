@@ -77,7 +77,7 @@ struct DayRhythmTimelineProvider: TimelineProvider {
                     }
                 }
 
-                
+
                 let events = try JSONDecoder().decode([WidgetEvent].self, from: data)
                 return events
             } catch {
@@ -85,8 +85,8 @@ struct DayRhythmTimelineProvider: TimelineProvider {
             }
         }
 
-        
-        return DayRhythmWidget.sampleEvents()
+
+        return []
     }
 }
 

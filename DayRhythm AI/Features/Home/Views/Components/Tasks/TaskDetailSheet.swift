@@ -94,6 +94,8 @@ struct TaskDetailSheet: View {
                             .padding(.top, 8)
                         } else {
                             VStack(spacing: 12) {
+                                Spacer()
+                                
                                 HStack(spacing: 8) {
                                     Image(systemName: "lock.fill")
                                         .font(.system(size: 14))

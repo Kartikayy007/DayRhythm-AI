@@ -301,10 +301,15 @@ class CloudSyncService {
     
     
     func batchSyncEvents(_ events: [DayEvent], clearExisting: Bool = false) async throws -> [DayEvent] {
-        
-        
-        
-        
+
+
+
+
+
+        if clearExisting && events.isEmpty {
+            print("⚠️ WARNING: batchSyncEvents called with clearExisting=true and EMPTY events array!")
+            print("⚠️ This will DELETE all cloud data. If this is a first sync, fetch events first.")
+        }
 
         let token = try await getCurrentToken()
         

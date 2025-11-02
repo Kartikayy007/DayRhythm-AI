@@ -31,7 +31,7 @@ struct DataStorageSettingsView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         VStack(alignment: .leading, spacing: 16) {
-                            Label("Cloud Sync", systemImage: "icloud")
+                            Label("Cloud Storage", systemImage: "icloud")
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.white)
 
@@ -52,11 +52,11 @@ struct DataStorageSettingsView: View {
                                 )) {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 4) {
-                                            Text("Sync to Cloud")
+                                            Text("Upload Changes to Cloud")
                                                 .font(.system(size: 17))
                                                 .foregroundColor(.white)
 
-                                            Text(cloudSyncEnabled ? "Your tasks sync across all devices" : "Tasks are stored locally only")
+                                            Text(cloudSyncEnabled ? "Your local changes sync to cloud automatically" : "View cloud tasks, but changes stay on this device only")
                                                 .font(.system(size: 13))
                                                 .foregroundColor(.white.opacity(0.6))
                                         }
@@ -230,9 +230,9 @@ struct DataStorageSettingsView: View {
                 }
             } message: {
                 if migrationDirection == .toCloud {
-                    Text("Your local tasks will be uploaded to the cloud. This allows you to access them from any device.")
+                    Text("Enable automatic upload of your local changes to the cloud. You'll still see cloud tasks even with this OFF.")
                 } else {
-                    Text("Your cloud tasks will be downloaded and stored locally only. They won't sync across devices anymore.")
+                    Text("Disable automatic uploads. Your local changes will stay on this device only, but you'll still see cloud tasks.")
                 }
             }
             .alert("Clear Local Data?", isPresented: $showClearDataAlert) {
@@ -313,29 +313,31 @@ class DataStorageViewModel: ObservableObject {
     }
 
     func toggleCloudSync(_ direction: DataStorageSettingsView.MigrationDirection) async {
-        
-        
+
+
 
         await MainActor.run {
             isSyncing = true
         }
 
         if direction == .toCloud {
-            
-            
+
             do {
                 let localEvents = storageManager.loadEventsFromLocal()
-                
 
-                let syncedEvents = try await cloudSyncService.batchSyncEvents(localEvents, clearExisting: true)
-                
+
+                let syncedEvents = try await cloudSyncService.batchSyncEvents(
+                    localEvents,
+                    clearExisting: false
+                )
+
                 storageManager.saveEventsLocally(syncedEvents)
                 storageManager.isCloudSyncEnabled = true
 
                 await MainActor.run {
                     loadStorageInfo()
                     isSyncing = false
-                    
+
                     NotificationCenter.default.post(name: .cloudSyncDidToggle, object: nil)
                 }
             } catch {
@@ -345,26 +347,13 @@ class DataStorageViewModel: ObservableObject {
                 }
             }
         } else {
-            
-            
-            do {
-                let cloudEvents = try await cloudSyncService.fetchEvents()
-                
 
-                storageManager.migrateToLocal(cloudEvents)
-                storageManager.isCloudSyncEnabled = false
 
-                await MainActor.run {
-                    loadStorageInfo()
-                    isSyncing = false
-                    
-                    NotificationCenter.default.post(name: .cloudSyncDidToggle, object: nil)
-                }
-            } catch {
-                await MainActor.run {
-                    syncError = error.localizedDescription
-                    isSyncing = false
-                }
+            storageManager.isCloudSyncEnabled = false
+
+            await MainActor.run {
+                isSyncing = false
+                NotificationCenter.default.post(name: .cloudSyncDidToggle, object: nil)
             }
         }
     }

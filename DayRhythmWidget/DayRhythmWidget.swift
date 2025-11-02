@@ -17,23 +17,15 @@ struct DayRhythmWidget: Widget {
         }
         .configurationDisplayName("")
         .description("")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall])
         .contentMarginsDisabled()
     }
 }
 
 struct DayRhythmWidget_Previews: PreviewProvider {
     static var previews: some View {
-        Group {
-
-
-
-            DayRhythmWidgetView(entry: DayRhythmEntry(date: Date(), events: DayRhythmWidget.sampleEvents()))
-                .previewContext(WidgetPreviewContext(family: .systemMedium))
-
-
-
-        }
+        DayRhythmWidgetView(entry: DayRhythmEntry(date: Date(), events: DayRhythmWidget.sampleEvents()))
+            .previewContext(WidgetPreviewContext(family: .systemSmall))
     }
 }
 

@@ -165,28 +165,33 @@ final class HomeViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    
+
+
 
     func loadEvents() {
-        
-        
-        
 
-        if cloudSyncEnabled {
 
-            
+
+
+        loadEventsFromLocal()
+
+
+        if appState.isAuthenticated {
             Task {
-                await loadEventsFromCloud()
+                await fetchFromCloudReadOnly()
             }
-        } else {
-
-            
-            loadEventsFromLocal()
         }
 
-        
+
+        if cloudSyncEnabled {
+            Task {
+                await syncWithCloud()
+            }
+        }
+
+
         if calendarSyncEnabled {
-            
+
             Task {
                 await loadCalendarEvents()
             }
@@ -200,20 +205,56 @@ final class HomeViewModel: ObservableObject {
         objectWillChange.send()
     }
 
-    
-    private func loadEventsFromCloud() async {
-        
 
-        
+
+    private func loadEventsFromCloud() async {
+
+
+
         await MainActor.run {
             loadEventsFromLocal()
         }
 
-        
+
         await syncWithCloud()
     }
 
-    
+
+    private func fetchFromCloudReadOnly() async {
+
+
+        do {
+            let cloudEvents = try await CloudSyncService.shared.fetchEvents()
+
+            await MainActor.run {
+
+                let localEvents = eventsByDate.values.flatMap { $0 }
+                let merged = storageManager.resolveConflicts(
+                    localEvents: localEvents,
+                    cloudEvents: cloudEvents
+                )
+
+
+                var newEventsByDate: [String: [DayEvent]] = [:]
+                for event in merged {
+                    let dateKey = event.dateString
+                    if newEventsByDate[dateKey] == nil {
+                        newEventsByDate[dateKey] = []
+                    }
+                    newEventsByDate[dateKey]?.append(event)
+                }
+
+                eventsByDate = newEventsByDate
+                saveEventsToLocal()
+                objectWillChange.send()
+            }
+        } catch {
+
+            print("Read-only cloud fetch failed: \(error)")
+        }
+    }
+
+
 
     private func saveEventsToLocal() {
         storageManager.saveEventsByDateLocally(eventsByDate)

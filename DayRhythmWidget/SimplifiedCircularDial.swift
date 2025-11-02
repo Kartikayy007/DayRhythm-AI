@@ -164,23 +164,14 @@ struct SimplifiedCircularDial: View {
                 .offset(y: -size * 0.125)
                 .rotationEffect(.degrees(hourAngle), anchor: .center)
 
-            
+
             Rectangle()
                 .fill(Color.cyan.opacity(0.8))
                 .frame(width: size * 0.008, height: size * 0.35)
                 .offset(y: -size * 0.175)
                 .rotationEffect(.degrees(minuteAngle), anchor: .center)
 
-            
-            if size > 150 {
-                Rectangle()
-                    .fill(Color.cyan.opacity(0.6))
-                    .frame(width: size * 0.004, height: size * 0.4)
-                    .offset(y: -size * 0.2)
-                    .rotationEffect(.degrees(secondAngle), anchor: .center)
-            }
 
-            
             Circle()
                 .fill(Color.cyan)
                 .frame(width: size * 0.025, height: size * 0.025)

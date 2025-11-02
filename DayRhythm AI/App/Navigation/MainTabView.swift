@@ -10,8 +10,8 @@ import SwiftUI
 struct MainTabView: View {
     @StateObject private var homeViewModel = HomeViewModel()
     @State private var showCreateTask = false
-    @State private var selectedTab = 0
-    @State private var previousTab = 0
+    @State private var selectedTab = 1
+    @State private var previousTab = 1
 
     var body: some View {
         TabView(selection: $selectedTab) {

@@ -76,7 +76,7 @@ struct CalendarSettingsView: View {
                                 ProgressView()
                                     .scaleEffect(0.8)
                             } else {
-                                Text("Enable")
+                                Text("Tap on Toggle button above")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 16)

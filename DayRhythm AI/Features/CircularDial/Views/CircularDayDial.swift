@@ -38,7 +38,7 @@ struct RadialSegment: Shape {
     }
 }
 
-enum ClockMode: String, CaseIterable {
+enum ClockMode: String, CaseIterable, Codable {
     case twelveHour = "12h"
     case twentyFourHour = "24h"
     case auto = "Auto"
@@ -50,7 +50,7 @@ enum ClockMode: String, CaseIterable {
         case .twentyFourHour:
             return 24
         case .auto:
-            
+
             return 12
         }
     }
@@ -87,7 +87,7 @@ struct CircularDayDial: View {
     var onEventTap: ((DayEvent) -> Void)? = nil
     var onDragStateChange: ((Bool) -> Void)? = nil
 
-    @State private var clockMode: ClockMode = .twentyFourHour
+    @AppStorage("circularDialClockMode") private var clockMode: ClockMode = .twentyFourHour
     @State private var timeFilter: TimeFilter = .am
     @StateObject private var motionManager = MotionManager()
     @State private var currentTime = Date()

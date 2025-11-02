@@ -9,11 +9,28 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    @State private var showSplash = true
 
     var body: some View {
-        MainTabView()
-            .fontDesign(.rounded)
-            .hideKeyboardOnTap()
+        ZStack {
+            if showSplash {
+                SplashView()
+                    .transition(.opacity)
+                    .zIndex(1)
+            } else {
+                MainTabView()
+                    .fontDesign(.rounded)
+                    .hideKeyboardOnTap()
+                    .transition(.opacity)
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    showSplash = false
+                }
+            }
+        }
     }
 }
 
