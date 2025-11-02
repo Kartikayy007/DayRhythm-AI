@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🌅 DayRhythm AI
-<img src="docs/screenshots/logo.PNG" width="100" alt="Logo"/>
+<img src="docs/screenshots/logo.png" width="100" alt="Logo"/>
 
 ### *Reimagine Your Day with Circular Time*
 
